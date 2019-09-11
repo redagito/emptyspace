@@ -16,7 +16,7 @@ private:
 	void HandleInput(double deltaTime);
 	void Initialize();
 	void Update(double deltaTime);
-	
+
 	GLFWwindow* _window;
 	int _windowHeight;
 	int _windowWidth;

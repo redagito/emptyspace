@@ -14,6 +14,7 @@ public:
 	{
 		_vertexBuffer = CreateBuffer(vertices);
 		_indexBuffer = CreateBuffer(indices);
+		_indexCount = indices.size();
 
 		glCreateVertexArrays(1, &_vao);
 		glVertexArrayVertexBuffer(_vao, 0, _vertexBuffer, 0, sizeof(T));
@@ -33,6 +34,16 @@ public:
 		glDeleteBuffers(1, &_vertexBuffer);
 		glDeleteVertexArrays(1, &_vao);
 	}
+
+	inline void Bind() const
+	{
+		glBindVertexArray(_vao);
+	}
+
+	inline void Draw() const
+	{
+		glDrawElements(GL_TRIANGLES, _indexCount, GL_UNSIGNED_BYTE, nullptr);
+	}
 	
 private:
 	template<typename T>
@@ -49,6 +60,7 @@ private:
 	u32 _vao;
 	u32 _vertexBuffer;
 	u32 _indexBuffer;
+	u32 _indexCount;
 	std::vector<AttributeFormat> _vertexFormat;
 };
 
