@@ -4,9 +4,13 @@
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\application.cpp" />
     <ClCompile Include="..\external\glad\src\glad.c" />
+    <ClCompile Include="source\graphics\geometry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\emptyspace\application.hpp" />
     <ClInclude Include="include\emptyspace\types.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\geometry.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\attributeformat.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\vertexpositioncolornormaluv.hpp" />
   </ItemGroup>
 </Project>

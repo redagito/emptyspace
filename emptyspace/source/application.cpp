@@ -1,29 +1,31 @@
 #include <emptyspace/types.hpp>
 #include <emptyspace/application.hpp>
+#include <emptyspace/graphics/geometry.hpp>
+#include <emptyspace/graphics/vertexpositioncolornormaluv.hpp>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <cmath>
 #include <cstdio>
+#include <vector>
+#include "emptyspace/graphics/attributeformat.hpp"
 
 Application::Application()
-    : _window(nullptr), _windowHeight(1080), _windowWidth(1920)
+	: _window(nullptr), _windowHeight(1080), _windowWidth(1920)
 {
 	if (!glfwInit())
 	{
-		
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	
+
 	_window = glfwCreateWindow(_windowWidth, _windowHeight, "emptyspace", nullptr, nullptr);
 	if (_window == nullptr)
 	{
-		
 	}
 
 	const auto primaryMonitor = glfwGetPrimaryMonitor();
@@ -34,12 +36,11 @@ Application::Application()
 
 	glfwGetMonitorWorkarea(primaryMonitor, &xpos, &ypos, &screenWidth, &screenHeight);
 	glfwSetWindowPos(_window, screenWidth / 2 - (_windowWidth / 2), screenHeight / 2 - (_windowHeight / 2));
-	
+
 	glfwMakeContextCurrent(_window);
 	glfwSwapInterval(1);
 	if (!gladLoadGL())
 	{
-		
 	}
 }
 
@@ -57,14 +58,14 @@ void Application::Run()
 
 	auto t1 = glfwGetTime();
 
-	auto deltaTimeAverage = 0.0;  // first moment
-	auto deltaTimeAverageSquared = 0.0; // second moment
+	auto deltaTimeAverage = 0.0;
+	auto deltaTimeAverageSquared = 0.0;
 
 	auto framesToAverage = 100;
 	auto frameCounter = 0;
-	
-	glfwSwapInterval(1);
-	
+
+	glfwSwapInterval(0);
+
 	while (!glfwWindowShouldClose(_window))
 	{
 		const auto t2 = glfwGetTime();
@@ -79,10 +80,12 @@ void Application::Run()
 		{
 			deltaTimeAverage /= framesToAverage;
 			deltaTimeAverageSquared /= framesToAverage;
-			const auto deltaTimeStandardError = sqrt(deltaTimeAverageSquared - deltaTimeAverage * deltaTimeAverage) / sqrt(framesToAverage);
+			const auto deltaTimeStandardError = sqrt(deltaTimeAverageSquared - deltaTimeAverage * deltaTimeAverage) /
+				sqrt(framesToAverage);
 
-			char str[64];
-			sprintf_s(str, "time frame = %.3fms +/- %.4fms, fps = %.1f, %d frames", 1000.0 * deltaTimeAverage, 1000.0 * deltaTimeStandardError, 1.0 / deltaTimeAverage, framesToAverage);
+			char str[76];
+			sprintf_s(str, "emptyspace, frame = %.3fms +/- %.4fms, fps = %.1f, %d frames", 1000.0 * deltaTimeAverage,
+			          1000.0 * deltaTimeStandardError, 1.0 / deltaTimeAverage, framesToAverage);
 			glfwSetWindowTitle(_window, str);
 
 			framesToAverage = static_cast<int>(1.0 / deltaTimeAverage);
@@ -97,12 +100,13 @@ void Application::Run()
 
 		glfwSwapBuffers(_window);
 	}
-	
+
 	Cleanup();
 }
 
 void Application::Cleanup()
 {
+	delete _planeGeometry;
 }
 
 void Application::Draw(double deltaTime)
@@ -110,12 +114,43 @@ void Application::Draw(double deltaTime)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void Application::HandleInput(double deltaTime)
+{
+}
+
 void Application::Initialize()
 {
+	glViewport(0, 0, _windowWidth, _windowHeight);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+
+	const std::vector<VertexPositionColorNormalUv> planeVertices =
+	{
+		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.0f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.0f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.0f, -0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.0f, -0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+	};
+
+	const std::vector<u8> planeIndices =
+	{
+		0, 1, 2, 2, 3, 0,
+	};
+
+	const std::vector<AttributeFormat> planeVertexFormat =
+	{
+		CreateAttributeFormat<glm::vec3>(0, offsetof(VertexPositionColorNormalUv, Position)),
+		CreateAttributeFormat<glm::vec3>(1, offsetof(VertexPositionColorNormalUv, Color)),
+		CreateAttributeFormat<glm::vec3>(2, offsetof(VertexPositionColorNormalUv, Normal)),
+		CreateAttributeFormat<glm::vec2>(3, offsetof(VertexPositionColorNormalUv, Uv))
+	};
+
+	_planeGeometry = new Geometry(planeVertices, planeIndices, planeVertexFormat);
 }
 
 void Application::Update(double deltaTime)
 {
 	glfwPollEvents();
+	HandleInput(deltaTime);
 }
