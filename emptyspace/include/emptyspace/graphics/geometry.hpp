@@ -47,7 +47,7 @@ public:
 	
 private:
 	template<typename T>
-	u32 CreateBuffer(const std::vector<T>& bufferData, u32 flags = GL_DYNAMIC_STORAGE_BIT)
+	static u32 CreateBuffer(const std::vector<T>& bufferData, u32 flags = GL_DYNAMIC_STORAGE_BIT)
 	{
 		u32 name = 0;
 

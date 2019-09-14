@@ -5,6 +5,7 @@
     <ClCompile Include="source\application.cpp" />
     <ClCompile Include="..\external\glad\src\glad.c" />
     <ClCompile Include="source\graphics\geometry.cpp" />
+    <ClCompile Include="source\math\camera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\emptyspace\application.hpp" />
@@ -12,5 +13,11 @@
     <ClInclude Include="include\emptyspace\graphics\geometry.hpp" />
     <ClInclude Include="include\emptyspace\graphics\attributeformat.hpp" />
     <ClInclude Include="include\emptyspace\graphics\vertexpositioncolornormaluv.hpp" />
+    <ClInclude Include="include\emptyspace\math\camera.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\shader.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\shaders\basic.vs.glsl" />
+    <None Include="res\shaders\basic.ps.glsl" />
   </ItemGroup>
 </Project>

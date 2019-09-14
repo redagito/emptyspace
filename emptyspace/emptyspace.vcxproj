@@ -66,6 +66,9 @@
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>assimp-vc140-mt.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -83,19 +86,29 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>assimp-vc140-mt.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\external\glad\src\glad.c" />
     <ClCompile Include="source\application.cpp" />
+    <ClCompile Include="source\math\camera.cpp" />
     <ClCompile Include="source\graphics\geometry.cpp" />
     <ClCompile Include="source\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\emptyspace\application.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\shader.hpp" />
+    <ClInclude Include="include\emptyspace\math\camera.hpp" />
     <ClInclude Include="include\emptyspace\graphics\geometry.hpp" />
     <ClInclude Include="include\emptyspace\graphics\attributeformat.hpp" />
     <ClInclude Include="include\emptyspace\graphics\vertexpositioncolornormaluv.hpp" />
     <ClInclude Include="include\emptyspace\types.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\shaders\basic.ps.glsl" />
+    <None Include="res\shaders\basic.vs.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

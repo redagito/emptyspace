@@ -1,20 +1,32 @@
 #include <emptyspace/types.hpp>
 #include <emptyspace/application.hpp>
+#include <emptyspace/graphics/attributeformat.hpp>
 #include <emptyspace/graphics/geometry.hpp>
 #include <emptyspace/graphics/vertexpositioncolornormaluv.hpp>
+#include <emptyspace/graphics/shader.hpp>
+#include <emptyspace/math/camera.hpp>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <cmath>
-#include <cstdio>
 #include <vector>
-#include "emptyspace/graphics/attributeformat.hpp"
 #include <iostream>
 #include <sstream>
 
+void OnFramebufferResized(GLFWwindow* window, int width, int height);
+void OnMouseMove(GLFWwindow* window, double xpos, double ypos);
+
+static double oldxpos;
+static double oldypos;
+
 #if _DEBUG
-void APIENTRY DebugCallback(u32 source, u32 type, u32 id, u32 severity, s32 length, const char* message, const void* userParam)
+void APIENTRY DebugCallback(u32 source, u32 type, u32 id, u32 severity, s32 length, const char* message,
+                            const void* userParam)
 {
 	std::ostringstream str;
 	str << "---------------------opengl-callback-start------------\n";
@@ -22,21 +34,30 @@ void APIENTRY DebugCallback(u32 source, u32 type, u32 id, u32 severity, s32 leng
 	str << "type: ";
 	switch (type)
 	{
-	case GL_DEBUG_TYPE_ERROR: str << "ERROR"; break;
-	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: str << "DEPRECATED_BEHAVIOR"; break;
-	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: str << "UNDEFINED_BEHAVIOR";	break;
-	case GL_DEBUG_TYPE_PORTABILITY: str << "PORTABILITY"; break;
-	case GL_DEBUG_TYPE_PERFORMANCE: str << "PERFORMANCE"; break;
-	case GL_DEBUG_TYPE_OTHER: str << "OTHER"; break;
+	case GL_DEBUG_TYPE_ERROR: str << "ERROR";
+		break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: str << "DEPRECATED_BEHAVIOR";
+		break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: str << "UNDEFINED_BEHAVIOR";
+		break;
+	case GL_DEBUG_TYPE_PORTABILITY: str << "PORTABILITY";
+		break;
+	case GL_DEBUG_TYPE_PERFORMANCE: str << "PERFORMANCE";
+		break;
+	case GL_DEBUG_TYPE_OTHER: str << "OTHER";
+		break;
 	}
 	str << '\n';
 	str << "id: " << id << '\n';
 	str << "severity: ";
 	switch (severity)
 	{
-	case GL_DEBUG_SEVERITY_LOW: str << "LOW"; break;
-	case GL_DEBUG_SEVERITY_MEDIUM: str << "MEDIUM";	break;
-	case GL_DEBUG_SEVERITY_HIGH: str << "HIGH";	break;
+	case GL_DEBUG_SEVERITY_LOW: str << "LOW";
+		break;
+	case GL_DEBUG_SEVERITY_MEDIUM: str << "MEDIUM";
+		break;
+	case GL_DEBUG_SEVERITY_HIGH: str << "HIGH";
+		break;
 	}
 	str << "\n---------------------opengl-callback-end--------------\n";
 
@@ -61,6 +82,14 @@ Application::Application()
 	{
 	}
 
+	if (glfwRawMouseMotionSupported())
+	{
+		glfwSetInputMode(_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+	}
+
+	glfwSetFramebufferSizeCallback(_window, OnFramebufferResized);
+	glfwSetCursorPosCallback(_window, OnMouseMove);
+
 	const auto primaryMonitor = glfwGetPrimaryMonitor();
 	int screenWidth;
 	int screenHeight;
@@ -83,7 +112,6 @@ Application::~Application()
 	_window = nullptr;
 	glfwTerminate();
 }
-
 
 void Application::Run()
 {
@@ -137,21 +165,53 @@ void Application::Run()
 	Cleanup();
 }
 
-void Application::Cleanup()
+void Application::Cleanup() const
 {
 	delete _planeGeometry;
+	delete _cubeGeometry;
 }
 
-void Application::Draw(double deltaTime)
+static float angle = 0.0f;
+
+void Application::Draw(double deltaTime) const
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	_basicShader->Use();
+	_basicShader->SetValue("u_model", glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, 0.0f)));
 	_planeGeometry->Bind();
 	_planeGeometry->Draw();
+
+	angle += static_cast<float>(deltaTime);
+	const auto rotationMatrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+	_basicShader->SetValue("u_model", glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * rotationMatrix);
+	_cubeGeometry->Bind();
+	_cubeGeometry->Draw();
 }
 
-void Application::HandleInput(double deltaTime)
+void Application::HandleInput(double deltaTime) const
 {
+	if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(_window, true);
+	}
+
+	if (glfwGetKey(_window, GLFW_KEY_W) == GLFW_PRESS)
+	{
+		_camera->ProcessKeyboard(CameraMovement::Forward, deltaTime);
+	}
+	if (glfwGetKey(_window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		_camera->ProcessKeyboard(CameraMovement::Backward, deltaTime);
+	}
+	if (glfwGetKey(_window, GLFW_KEY_A) == GLFW_PRESS)
+	{
+		_camera->ProcessKeyboard(CameraMovement::Left, deltaTime);
+	}
+	if (glfwGetKey(_window, GLFW_KEY_D) == GLFW_PRESS)
+	{
+		_camera->ProcessKeyboard(CameraMovement::Right, deltaTime);
+	}
 }
 
 void Application::Initialize()
@@ -161,7 +221,7 @@ void Application::Initialize()
 #if _DEBUG
 	if (glDebugMessageCallback)
 	{
-		std::clog << "registered opengl debug callback\n";
+		std::clog << "registered debug callback\n";
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(DebugCallback, nullptr);
 		GLuint unusedIds = 0;
@@ -172,11 +232,11 @@ void Application::Initialize()
 		std::clog << "glDebugMessageCallback not available\n";
 	}
 #endif
-	
+
 	glViewport(0, 0, _windowWidth, _windowHeight);
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	const std::vector<VertexPositionColorNormalUv> planeVertices =
 	{
@@ -186,12 +246,56 @@ void Application::Initialize()
 		VertexPositionColorNormalUv(glm::vec3(-0.5f, -0.5f, -1.0f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
 	};
 
+	const std::vector<VertexPositionColorNormalUv> const cubeVertices =
+	{
+		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f,-1.0f), glm::vec2(0.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f,-0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f,-1.0f), glm::vec2(1.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f,-0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f,-1.0f), glm::vec2(1.0f, 1.0f)),
+		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f,-1.0f), glm::vec2(0.0f, 1.0f)),
+
+		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+
+		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)),
+		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)),
+
+		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+
+		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f,-0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+
+		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f,-0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+	};
+
 	const std::vector<u8> planeIndices =
 	{
 		0, 1, 2, 2, 3, 0,
 	};
 
-	const std::vector<AttributeFormat> planeVertexFormat =
+	const std::vector<u8> const cubeIndices =
+	{
+		0,   1,  2,  2,  3,  0,
+		4,   5,  6,  6,  7,  4,
+		8,   9, 10, 10, 11,  8,
+
+		12, 13, 14, 14, 15, 12,
+		16, 17, 18, 18, 19, 16,
+		20, 21, 22, 22, 23, 20,
+	};
+
+	const std::vector<AttributeFormat> geometryVertexFormat =
 	{
 		CreateAttributeFormat<glm::vec3>(0, offsetof(VertexPositionColorNormalUv, Position)),
 		CreateAttributeFormat<glm::vec3>(1, offsetof(VertexPositionColorNormalUv, Color)),
@@ -199,12 +303,45 @@ void Application::Initialize()
 		CreateAttributeFormat<glm::vec2>(3, offsetof(VertexPositionColorNormalUv, Uv))
 	};
 
-	_planeGeometry = new Geometry(planeVertices, planeIndices, planeVertexFormat);
+	_planeGeometry = new Geometry(planeVertices, planeIndices, geometryVertexFormat);
+	_cubeGeometry = new Geometry(cubeVertices, cubeIndices, geometryVertexFormat);
+
+	_basicShader = new Shader("res/shaders/basic.vs.glsl", "res/shaders/basic.ps.glsl");
+
+	_camera = new Camera(glm::vec3{0, 0, 5});
+	_camera->MouseSensitivity = 0.1f;
+	_projection = glm::perspective(glm::pi<f32>() / 4.0f,
+	                               static_cast<float>(_windowWidth) / static_cast<float>(_windowHeight), 0.1f, 512.0f);
+
+	oldxpos = _windowWidth / 2.0f;
+	oldypos = _windowHeight / 2.0f;
+	glfwSetCursorPos(_window, oldxpos, oldypos);
+	glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetWindowUserPointer(_window, _camera);
 }
 
-void Application::Update(double deltaTime)
+void Application::Update(const double deltaTime) const
 {
 	glfwPollEvents();
 	HandleInput(deltaTime);
+
+	_basicShader->SetValue("u_model", glm::mat4x4(1.0f));
+	_basicShader->SetValue("u_view", _camera->GetViewMatrix());
+	_basicShader->SetValue("u_projection", _projection);
 }
 
+void OnFramebufferResized(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+}
+
+void OnMouseMove(GLFWwindow* window, double xpos, double ypos)
+{
+	const auto camera = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(window));
+	if (camera != nullptr)
+	{
+		camera->ProcessMouseMovement(xpos - oldxpos, oldypos - ypos);
+		oldxpos = xpos;
+		oldypos = ypos;
+	}
+}
