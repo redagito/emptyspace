@@ -5,7 +5,6 @@
 
 #include <vector>
 
-
 class Geometry
 {
 public:
@@ -13,6 +12,7 @@ public:
 	Geometry(const std::vector<T>& vertices, const std::vector<u8>& indices, std::vector<AttributeFormat> vertexFormat)
 	{
 		_vertexBuffer = CreateBuffer(vertices);
+		_vertexCount = u32(vertices.size());
 		_indexBuffer = CreateBuffer(indices);
 		_indexCount = u32(indices.size());
 
@@ -42,7 +42,22 @@ public:
 
 	inline void Draw() const
 	{
+		glDrawArrays(GL_TRIANGLES, 0, _vertexCount);
+	}
+
+	inline void DrawElements() const
+	{
 		glDrawElements(GL_TRIANGLES, _indexCount, GL_UNSIGNED_BYTE, nullptr);
+	}
+
+	inline void DrawInstanced(const s32 instanceCount) const
+	{
+		glDrawArraysInstanced(GL_TRIANGLES, 0, _vertexCount, instanceCount);
+	}
+
+	inline void DrawElementsInstanced(const s32 instanceCount) const
+	{
+		glDrawElementsInstanced(GL_TRIANGLES, _indexCount, GL_UNSIGNED_BYTE, nullptr, instanceCount);
 	}
 
 private:
@@ -61,5 +76,6 @@ private:
 	u32 _vertexBuffer;
 	u32 _indexBuffer;
 	u32 _indexCount;
+	u32 _vertexCount;
 	std::vector<AttributeFormat> _vertexFormat;
 };

@@ -171,6 +171,9 @@ void Application::Cleanup() const
 	delete _planeGeometry;
 	delete _cubeGeometry;
 
+	delete _basicShader;
+	delete _basicShaderInstanced;
+
 	delete _asteroidInstanceBuffer;
 }
 
@@ -181,15 +184,22 @@ void Application::Draw(const f32 deltaTime) const
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	_basicShader->Use();
-	_basicShader->SetValue("u_model", glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, 0.0f)));
+	
+	_basicShader->SetValue("u_model", glm::translate(glm::mat4(-1.0f), glm::vec3(-1.0f, 0.0f, 0.0f)));
 	_planeGeometry->Bind();
-	_planeGeometry->Draw();
+	_planeGeometry->DrawElements();
 
 	angle += static_cast<float>(deltaTime);
 	const auto rotationMatrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 	_basicShader->SetValue("u_model", glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * rotationMatrix);
 	_cubeGeometry->Bind();
-	_cubeGeometry->Draw();
+	_cubeGeometry->DrawElements();
+
+
+	_basicShaderInstanced->Use();
+	_cubeGeometry->Bind();
+	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, _asteroidInstanceBuffer->GetId(), 0, 1000);
+	_cubeGeometry->DrawElementsInstanced(1000);
 }
 
 void Application::HandleInput(const f32 deltaTime) const
@@ -237,37 +247,38 @@ void Application::HandleInput(const f32 deltaTime) const
 
 }
 
+// shamelessly stolen from the learnopengl tutorial
 std::vector<glm::mat4> CreateAsteroidInstances()
 {
 	unsigned int amount = 1000;
-	std::vector<glm::mat4> modelMatrices(amount);
+	std::vector<glm::mat4> modelMatrices;
 
 	srand(glfwGetTime()); // initialize random seed	
-	float radius = 50.0;
+	float radius = 50.0f;
 	float offset = 2.5f;
 	for (unsigned int i = 0; i < amount; i++)
 	{
 		glm::mat4 model = glm::mat4(1.0f);
 		// 1. translation: displace along circle with 'radius' in range [-offset, offset]
 		float angle = (float)i / (float)amount * 360.0f;
-		float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+		float displacement = (rand() % (int)(2.0f * offset * 100)) / 100.0f - offset;
 		float x = sin(angle) * radius + displacement;
-		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+		displacement = (rand() % (int)(2.0f * offset * 100)) / 100.0f - offset;
 		float y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
-		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+		displacement = (rand() % (int)(2.0f * offset * 100)) / 100.0f - offset;
 		float z = cos(angle) * radius + displacement;
 		model = glm::translate(model, glm::vec3(x, y, z));
 
 		// 2. scale: Scale between 0.05 and 0.25f
-		float scale = (rand() % 20) / 100.0f + 0.05;
-		model = glm::scale(model, glm::vec3(scale));
+		//float scale = (rand() % 20) / 100.0f + 0.05;
+		//model = glm::scale(model, glm::vec3(scale));
 
 		// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
 		float rotAngle = (rand() % 360);
 		model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
 
 		// 4. now add to list of matrices
-		modelMatrices[i] = model;
+		modelMatrices.push_back(model);
 	}
 
 	return modelMatrices;
@@ -295,7 +306,7 @@ void Application::Initialize()
 	glViewport(0, 0, _windowWidth, _windowHeight);
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClearColor(0.05f, 0.05f, 0.05f, 0.05f);
 
 	const std::vector<VertexPositionColorNormalUv> planeVertices =
 	{
@@ -371,6 +382,7 @@ void Application::Initialize()
 	_cubeGeometry = new Geometry(cubeVertices, cubeIndices, geometryVertexFormat);
 
 	_basicShader = new Shader("res/shaders/basic.vs.glsl", "res/shaders/basic.ps.glsl");
+	_basicShaderInstanced = new Shader("res/shaders/basic_instanced.vs.glsl", "res/shaders/basic.ps.glsl");
 
 	_camera = new Camera(glm::vec3{0, 0, 5});
 	_camera->MouseSensitivity = 0.1f;
@@ -392,6 +404,9 @@ void Application::Update(const f32 deltaTime) const
 	_basicShader->SetValue("u_model", glm::mat4x4(1.0f));
 	_basicShader->SetValue("u_view", _camera->GetViewMatrix());
 	_basicShader->SetValue("u_projection", _projection);
+	
+	_basicShaderInstanced->SetValue("u_view", _camera->GetViewMatrix());
+	_basicShaderInstanced->SetValue("u_projection", _projection);
 }
 
 void OnFramebufferResized(GLFWwindow* window, int width, int height)
