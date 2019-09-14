@@ -8,7 +8,9 @@ enum CameraMovement
 	Forward,
 	Backward,
 	Left,
-	Right
+	Right,
+	Up,
+	Down
 };
 
 const f32 YAW = -90.0f;
@@ -78,6 +80,14 @@ public:
 		if (direction == CameraMovement::Right)
 		{
 			Position += Right * velocity;
+		}
+		if (direction == CameraMovement::Up)
+		{
+			Position += Up * velocity;
+		}
+		if (direction == CameraMovement::Down)
+		{
+			Position -= Up * velocity;
 		}
 	}
 

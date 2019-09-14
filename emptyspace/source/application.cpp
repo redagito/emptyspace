@@ -199,6 +199,12 @@ void Application::HandleInput(const f32 deltaTime) const
 		glfwSetWindowShouldClose(_window, true);
 	}
 
+	_camera->MovementSpeed = SPEED;
+	if (glfwGetKey(_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+	{
+		_camera->MovementSpeed = SPEED * 10;
+	}
+
 	if (glfwGetKey(_window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		_camera->ProcessKeyboard(CameraMovement::Forward, deltaTime);
@@ -218,6 +224,17 @@ void Application::HandleInput(const f32 deltaTime) const
 	{
 		_camera->ProcessKeyboard(CameraMovement::Right, deltaTime);
 	}
+	
+	if (glfwGetKey(_window, GLFW_KEY_SPACE) == GLFW_PRESS)
+	{
+		_camera->ProcessKeyboard(CameraMovement::Up, deltaTime);
+	}
+	
+	if (glfwGetKey(_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+	{
+		_camera->ProcessKeyboard(CameraMovement::Down, deltaTime);
+	}
+
 }
 
 std::vector<glm::mat4> CreateAsteroidInstances()
