@@ -6,6 +6,7 @@ struct GLFWwindow;
 
 class Camera;
 class Geometry;
+class InstanceBuffer;
 class Shader;
 
 class Application final
@@ -26,6 +27,7 @@ private:
 	int _windowHeight;
 	int _windowWidth;
 
+	InstanceBuffer* _asteroidInstanceBuffer{};
 	Geometry* _planeGeometry{};
 	Geometry* _cubeGeometry{};
 	Camera* _camera{};

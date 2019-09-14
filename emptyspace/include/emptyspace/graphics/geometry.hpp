@@ -9,12 +9,12 @@
 class Geometry
 {
 public:
-	template<typename T>
+	template <typename T>
 	Geometry(const std::vector<T>& vertices, const std::vector<u8>& indices, std::vector<AttributeFormat> vertexFormat)
 	{
 		_vertexBuffer = CreateBuffer(vertices);
 		_indexBuffer = CreateBuffer(indices);
-		_indexCount = indices.size();
+		_indexCount = u32(indices.size());
 
 		glCreateVertexArrays(1, &_vao);
 		glVertexArrayVertexBuffer(_vao, 0, _vertexBuffer, 0, sizeof(T));
@@ -44,9 +44,9 @@ public:
 	{
 		glDrawElements(GL_TRIANGLES, _indexCount, GL_UNSIGNED_BYTE, nullptr);
 	}
-	
+
 private:
-	template<typename T>
+	template <typename T>
 	static u32 CreateBuffer(const std::vector<T>& bufferData, u32 flags = GL_DYNAMIC_STORAGE_BIT)
 	{
 		u32 name = 0;
@@ -63,5 +63,3 @@ private:
 	u32 _indexCount;
 	std::vector<AttributeFormat> _vertexFormat;
 };
-
-

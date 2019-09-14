@@ -2,6 +2,7 @@
 #include <emptyspace/application.hpp>
 #include <emptyspace/graphics/attributeformat.hpp>
 #include <emptyspace/graphics/geometry.hpp>
+#include <emptyspace/graphics/instancebuffer.hpp>
 #include <emptyspace/graphics/vertexpositioncolornormaluv.hpp>
 #include <emptyspace/graphics/shader.hpp>
 #include <emptyspace/math/camera.hpp>
@@ -73,7 +74,7 @@ Application::Application()
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
@@ -119,8 +120,8 @@ void Application::Run()
 
 	auto t1 = glfwGetTime();
 
-	auto deltaTimeAverage = 0.0;
-	auto deltaTimeAverageSquared = 0.0;
+	auto deltaTimeAverage = 0.0f;
+	auto deltaTimeAverageSquared = 0.0f;
 
 	auto framesToAverage = 100;
 	auto frameCounter = 0;
@@ -134,7 +135,7 @@ void Application::Run()
 		t1 = t2;
 
 		deltaTimeAverage += deltaTime;
-		deltaTimeAverageSquared += deltaTime * deltaTime;
+		deltaTimeAverageSquared += (deltaTime * deltaTime);
 		frameCounter++;
 
 		if (frameCounter == framesToAverage)
@@ -145,14 +146,14 @@ void Application::Run()
 				sqrt(framesToAverage);
 
 			char str[76];
-			sprintf_s(str, "emptyspace, frame = %.3fms +/- %.4fms, fps = %.1f, %d frames", 1000.0 * deltaTimeAverage,
-			          1000.0 * deltaTimeStandardError, 1.0 / deltaTimeAverage, framesToAverage);
+			sprintf_s(str, "emptyspace, frame = %.3fms +/- %.4fms, fps = %.1f, %d frames", (deltaTimeAverage * 1000.0f),
+			          1000.0f * deltaTimeStandardError, 1.0f / deltaTimeAverage, framesToAverage);
 			glfwSetWindowTitle(_window, str);
 
-			framesToAverage = static_cast<int>(1.0 / deltaTimeAverage);
+			framesToAverage = static_cast<int>(1.0f / deltaTimeAverage);
 
-			deltaTimeAverage = 0.0;
-			deltaTimeAverageSquared = 0.0;
+			deltaTimeAverage = 0.0f;
+			deltaTimeAverageSquared = 0.0f;
 			frameCounter = 0;
 		}
 
@@ -169,6 +170,8 @@ void Application::Cleanup() const
 {
 	delete _planeGeometry;
 	delete _cubeGeometry;
+
+	delete _asteroidInstanceBuffer;
 }
 
 static float angle = 0.0f;
@@ -200,18 +203,57 @@ void Application::HandleInput(const f32 deltaTime) const
 	{
 		_camera->ProcessKeyboard(CameraMovement::Forward, deltaTime);
 	}
+	
 	if (glfwGetKey(_window, GLFW_KEY_S) == GLFW_PRESS)
 	{
 		_camera->ProcessKeyboard(CameraMovement::Backward, deltaTime);
 	}
+	
 	if (glfwGetKey(_window, GLFW_KEY_A) == GLFW_PRESS)
 	{
 		_camera->ProcessKeyboard(CameraMovement::Left, deltaTime);
 	}
+	
 	if (glfwGetKey(_window, GLFW_KEY_D) == GLFW_PRESS)
 	{
 		_camera->ProcessKeyboard(CameraMovement::Right, deltaTime);
 	}
+}
+
+std::vector<glm::mat4> CreateAsteroidInstances()
+{
+	unsigned int amount = 1000;
+	std::vector<glm::mat4> modelMatrices(amount);
+
+	srand(glfwGetTime()); // initialize random seed	
+	float radius = 50.0;
+	float offset = 2.5f;
+	for (unsigned int i = 0; i < amount; i++)
+	{
+		glm::mat4 model = glm::mat4(1.0f);
+		// 1. translation: displace along circle with 'radius' in range [-offset, offset]
+		float angle = (float)i / (float)amount * 360.0f;
+		float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+		float x = sin(angle) * radius + displacement;
+		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+		float y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
+		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+		float z = cos(angle) * radius + displacement;
+		model = glm::translate(model, glm::vec3(x, y, z));
+
+		// 2. scale: Scale between 0.05 and 0.25f
+		float scale = (rand() % 20) / 100.0f + 0.05;
+		model = glm::scale(model, glm::vec3(scale));
+
+		// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
+		float rotAngle = (rand() % 360);
+		model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+
+		// 4. now add to list of matrices
+		modelMatrices[i] = model;
+	}
+
+	return modelMatrices;
 }
 
 void Application::Initialize()
@@ -246,7 +288,7 @@ void Application::Initialize()
 		VertexPositionColorNormalUv(glm::vec3(-0.5f, -0.5f, -1.0f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
 	};
 
-	const std::vector<VertexPositionColorNormalUv> const cubeVertices =
+	const std::vector<VertexPositionColorNormalUv> cubeVertices =
 	{
 		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f,-1.0f), glm::vec2(0.0f, 0.0f)),
 		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f,-0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f,-1.0f), glm::vec2(1.0f, 0.0f)),
@@ -284,7 +326,7 @@ void Application::Initialize()
 		0, 1, 2, 2, 3, 0,
 	};
 
-	const std::vector<u8> const cubeIndices =
+	const std::vector<u8> cubeIndices =
 	{
 		0,   1,  2,  2,  3,  0,
 		4,   5,  6,  6,  7,  4,
@@ -302,6 +344,11 @@ void Application::Initialize()
 		CreateAttributeFormat<glm::vec3>(2, offsetof(VertexPositionColorNormalUv, Normal)),
 		CreateAttributeFormat<glm::vec2>(3, offsetof(VertexPositionColorNormalUv, Uv))
 	};
+
+	const auto asteroidInstances = CreateAsteroidInstances();
+	
+	_asteroidInstanceBuffer = new InstanceBuffer();
+	_asteroidInstanceBuffer->UpdateBuffer(asteroidInstances);
 
 	_planeGeometry = new Geometry(planeVertices, planeIndices, geometryVertexFormat);
 	_cubeGeometry = new Geometry(cubeVertices, cubeIndices, geometryVertexFormat);
@@ -340,7 +387,7 @@ void OnMouseMove(GLFWwindow* window, double xpos, double ypos)
 	const auto camera = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(window));
 	if (camera != nullptr)
 	{
-		camera->ProcessMouseMovement(xpos - oldxpos, oldypos - ypos);
+		camera->ProcessMouseMovement(f32(xpos - oldxpos), f32(oldypos - ypos));
 		oldxpos = xpos;
 		oldypos = ypos;
 	}

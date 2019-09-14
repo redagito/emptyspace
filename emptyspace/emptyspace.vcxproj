@@ -99,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\emptyspace\application.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\instancebuffer.hpp" />
     <ClInclude Include="include\emptyspace\graphics\shader.hpp" />
     <ClInclude Include="include\emptyspace\math\camera.hpp" />
     <ClInclude Include="include\emptyspace\graphics\geometry.hpp" />
@@ -109,6 +110,7 @@
   <ItemGroup>
     <None Include="res\shaders\basic.ps.glsl" />
     <None Include="res\shaders\basic.vs.glsl" />
+    <None Include="res\shaders\basic_instanced.vs.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
