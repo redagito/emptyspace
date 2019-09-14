@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 
 layout (location = 0) in vec3 in_position;
 layout (location = 1) in vec3 in_color;
@@ -16,5 +16,5 @@ void main()
 {
 	gl_Position = u_projection * u_view * u_model * vec4(in_position, 1.0f);
 	ps_color = in_color;
-	ps_uv = vec2(in_uv.x, in_uv.y);
+	ps_uv = in_uv;
 }
