@@ -200,9 +200,6 @@ void Application::Draw(const f32 deltaTime) const
 	_cubeGeometry->Bind();
 	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, _asteroidInstanceBuffer->GetId(), 0, 1000);
 	_cubeGeometry->DrawElementsInstanced(1000);
-
-	glBindVertexArray(0);
-	glUseProgram(0);
 }
 
 void Application::HandleInput(const f32 deltaTime) const
