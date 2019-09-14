@@ -130,7 +130,7 @@ void Application::Run()
 	while (!glfwWindowShouldClose(_window))
 	{
 		const auto t2 = glfwGetTime();
-		const auto deltaTime = t2 - t1;
+		const auto deltaTime = f32(t2 - t1);
 		t1 = t2;
 
 		deltaTimeAverage += deltaTime;
@@ -173,7 +173,7 @@ void Application::Cleanup() const
 
 static float angle = 0.0f;
 
-void Application::Draw(double deltaTime) const
+void Application::Draw(const f32 deltaTime) const
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -189,7 +189,7 @@ void Application::Draw(double deltaTime) const
 	_cubeGeometry->Draw();
 }
 
-void Application::HandleInput(double deltaTime) const
+void Application::HandleInput(const f32 deltaTime) const
 {
 	if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 	{
@@ -320,7 +320,7 @@ void Application::Initialize()
 	glfwSetWindowUserPointer(_window, _camera);
 }
 
-void Application::Update(const double deltaTime) const
+void Application::Update(const f32 deltaTime) const
 {
 	glfwPollEvents();
 	HandleInput(deltaTime);

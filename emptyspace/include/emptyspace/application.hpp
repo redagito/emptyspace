@@ -1,4 +1,5 @@
 #pragma once
+#include <emptyspace/types.hpp>
 #include <glm/mat4x4.hpp>
 
 struct GLFWwindow;
@@ -15,11 +16,11 @@ public:
 	void Run();
 private:
 	void Cleanup() const;
-	void Draw(const double deltaTime) const;
-	void HandleInput(const double deltaTime) const;
+	void Draw(const f32 deltaTime) const;
+	void HandleInput(const f32 deltaTime) const;
 	void Initialize();
 
-	void Update(const double deltaTime) const;
+	void Update(const f32 deltaTime) const;
 
 	GLFWwindow* _window;
 	int _windowHeight;
