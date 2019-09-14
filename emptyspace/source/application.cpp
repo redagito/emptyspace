@@ -6,6 +6,7 @@
 #include <emptyspace/graphics/vertexpositioncolornormaluv.hpp>
 #include <emptyspace/graphics/shader.hpp>
 #include <emptyspace/math/camera.hpp>
+#include <emptyspace/physics.hpp>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -67,7 +68,7 @@ void APIENTRY DebugCallback(u32 source, u32 type, u32 id, u32 severity, s32 leng
 #endif
 
 Application::Application()
-	: _window(nullptr), _windowHeight(1080), _windowWidth(1920)
+	: _window(nullptr), _windowHeight(720), _windowWidth(1280)
 {
 	if (!glfwInit())
 	{
@@ -105,6 +106,8 @@ Application::Application()
 	if (!gladLoadGL())
 	{
 	}
+
+	_physicsScene = new PhysicsScene();
 }
 
 Application::~Application()
@@ -207,31 +210,37 @@ void Application::HandleInput(const f32 deltaTime) const
 
 	if (glfwGetKey(_window, GLFW_KEY_W) == GLFW_PRESS)
 	{
+		_physicsScene->Boost(Direction::Forward);
 		_camera->ProcessKeyboard(CameraMovement::Forward, deltaTime);
 	}
 	
 	if (glfwGetKey(_window, GLFW_KEY_S) == GLFW_PRESS)
 	{
+		_physicsScene->Boost(Direction::Backward);
 		_camera->ProcessKeyboard(CameraMovement::Backward, deltaTime);
 	}
 	
 	if (glfwGetKey(_window, GLFW_KEY_A) == GLFW_PRESS)
 	{
+		_physicsScene->Boost(Direction::Left);
 		_camera->ProcessKeyboard(CameraMovement::Left, deltaTime);
 	}
 	
 	if (glfwGetKey(_window, GLFW_KEY_D) == GLFW_PRESS)
 	{
+		_physicsScene->Boost(Direction::Right);
 		_camera->ProcessKeyboard(CameraMovement::Right, deltaTime);
 	}
 	
 	if (glfwGetKey(_window, GLFW_KEY_SPACE) == GLFW_PRESS)
 	{
+		_physicsScene->Boost(Direction::Up);
 		_camera->ProcessKeyboard(CameraMovement::Up, deltaTime);
 	}
 	
 	if (glfwGetKey(_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 	{
+		_physicsScene->Boost(Direction::Down);
 		_camera->ProcessKeyboard(CameraMovement::Down, deltaTime);
 	}
 
@@ -389,9 +398,13 @@ void Application::Update(const f32 deltaTime) const
 	glfwPollEvents();
 	HandleInput(deltaTime);
 
+	_physicsScene->Step(deltaTime);
+	_camera->Position = _physicsScene->Fetch();
+
 	_basicShader->SetValue("u_model", glm::mat4x4(1.0f));
 	_basicShader->SetValue("u_view", _camera->GetViewMatrix());
 	_basicShader->SetValue("u_projection", _projection);
+
 }
 
 void OnFramebufferResized(GLFWwindow* window, int width, int height)

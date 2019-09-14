@@ -8,6 +8,7 @@ class Camera;
 class Geometry;
 class InstanceBuffer;
 class Shader;
+class PhysicsScene;
 
 class Application final
 {
@@ -33,4 +34,5 @@ private:
 	Camera* _camera{};
 	Shader* _basicShader{};
 	glm::mat4x4 _projection{};
+	PhysicsScene* _physicsScene{};
 };

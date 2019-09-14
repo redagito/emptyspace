@@ -6,6 +6,7 @@
     <ClCompile Include="..\external\glad\src\glad.c" />
     <ClCompile Include="source\graphics\geometry.cpp" />
     <ClCompile Include="source\math\camera.cpp" />
+    <ClCompile Include="source\physics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\emptyspace\application.hpp" />
@@ -16,6 +17,7 @@
     <ClInclude Include="include\emptyspace\math\camera.hpp" />
     <ClInclude Include="include\emptyspace\graphics\shader.hpp" />
     <ClInclude Include="include\emptyspace\graphics\instancebuffer.hpp" />
+    <ClInclude Include="include\emptyspace\physics.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\basic.vs.glsl" />
