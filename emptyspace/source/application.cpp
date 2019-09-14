@@ -74,7 +74,7 @@ Application::Application()
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
@@ -185,7 +185,7 @@ void Application::Draw(const f32 deltaTime) const
 
 	_basicShader->Use();
 	
-	_basicShader->SetValue("u_model", glm::translate(glm::mat4(-1.0f), glm::vec3(-1.0f, 0.0f, 0.0f)));
+	_basicShader->SetValue("u_model", glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, 0.0f)));
 	_planeGeometry->Bind();
 	_planeGeometry->DrawElements();
 
@@ -198,7 +198,7 @@ void Application::Draw(const f32 deltaTime) const
 
 	_basicShaderInstanced->Use();
 	_cubeGeometry->Bind();
-	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, _asteroidInstanceBuffer->GetId(), 0, 1000);
+	_asteroidInstanceBuffer->Bind();
 	_cubeGeometry->DrawElementsInstanced(1000);
 }
 
@@ -248,19 +248,18 @@ void Application::HandleInput(const f32 deltaTime) const
 }
 
 // shamelessly stolen from the learnopengl tutorial
-std::vector<glm::mat4> CreateAsteroidInstances()
+std::vector<glm::mat4> CreateAsteroidInstances(s32 instanceCount)
 {
-	unsigned int amount = 1000;
 	std::vector<glm::mat4> modelMatrices;
 
 	srand(glfwGetTime()); // initialize random seed	
 	float radius = 50.0f;
-	float offset = 2.5f;
-	for (unsigned int i = 0; i < amount; i++)
+	float offset = 25.5f;
+	for (unsigned int i = 0; i < instanceCount; i++)
 	{
 		glm::mat4 model = glm::mat4(1.0f);
 		// 1. translation: displace along circle with 'radius' in range [-offset, offset]
-		float angle = (float)i / (float)amount * 360.0f;
+		float angle = (float)i / (float)instanceCount * 360.0f;
 		float displacement = (rand() % (int)(2.0f * offset * 100)) / 100.0f - offset;
 		float x = sin(angle) * radius + displacement;
 		displacement = (rand() % (int)(2.0f * offset * 100)) / 100.0f - offset;
@@ -270,8 +269,8 @@ std::vector<glm::mat4> CreateAsteroidInstances()
 		model = glm::translate(model, glm::vec3(x, y, z));
 
 		// 2. scale: Scale between 0.05 and 0.25f
-		//float scale = (rand() % 20) / 100.0f + 0.05;
-		//model = glm::scale(model, glm::vec3(scale));
+		float scale = (rand() % 60) / 100.0f + 0.05;
+		model = glm::scale(model, glm::vec3(scale));
 
 		// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
 		float rotAngle = (rand() % 360);
@@ -373,7 +372,7 @@ void Application::Initialize()
 		CreateAttributeFormat<glm::vec2>(3, offsetof(VertexPositionColorNormalUv, Uv))
 	};
 
-	const auto asteroidInstances = CreateAsteroidInstances();
+	const auto asteroidInstances = CreateAsteroidInstances(10000);
 	
 	_asteroidInstanceBuffer = new InstanceBuffer();
 	_asteroidInstanceBuffer->UpdateBuffer(asteroidInstances);

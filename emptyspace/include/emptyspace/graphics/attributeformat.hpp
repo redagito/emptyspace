@@ -44,10 +44,6 @@ constexpr std::pair<GLint, GLenum> TypeToSizeEnum()
 	{
 		return std::make_pair(4, GL_FLOAT);
 	}
-	if constexpr (std::is_same_v<T, glm::mat4>)
-	{
-		return std::make_pair(16, GL_FLOAT);
-	}
 	
 	throw std::runtime_error("unsupported type");
 }
