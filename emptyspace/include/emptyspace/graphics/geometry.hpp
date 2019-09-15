@@ -18,8 +18,6 @@ public:
 		_indexCount = u32(indices.size());
 
 		glCreateVertexArrays(1, &_vao);
-		std::string name = "Geometry";
-		glObjectLabel(GL_ARRAY_BUFFER, _vao, name.length(), name.data());
 		glVertexArrayVertexBuffer(_vao, 0, _vertexBuffer, 0, sizeof(T));
 		glVertexArrayElementBuffer(_vao, _indexBuffer);
 

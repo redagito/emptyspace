@@ -26,47 +26,6 @@ void OnMouseMove(GLFWwindow* window, double xpos, double ypos);
 static double oldxpos;
 static double oldypos;
 
-#if _DEBUG
-void APIENTRY DebugCallback(u32 source, u32 type, u32 id, u32 severity, s32 length, const char* message,
-                            const void* userParam)
-{
-	std::ostringstream str;
-	str << "---------------------opengl-callback-start------------\n";
-	str << "message: " << message << '\n';
-	str << "type: ";
-	switch (type)
-	{
-	case GL_DEBUG_TYPE_ERROR: str << "ERROR";
-		break;
-	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: str << "DEPRECATED_BEHAVIOR";
-		break;
-	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: str << "UNDEFINED_BEHAVIOR";
-		break;
-	case GL_DEBUG_TYPE_PORTABILITY: str << "PORTABILITY";
-		break;
-	case GL_DEBUG_TYPE_PERFORMANCE: str << "PERFORMANCE";
-		break;
-	case GL_DEBUG_TYPE_OTHER: str << "OTHER";
-		break;
-	}
-	str << '\n';
-	str << "id: " << id << '\n';
-	str << "severity: ";
-	switch (severity)
-	{
-	case GL_DEBUG_SEVERITY_LOW: str << "LOW";
-		break;
-	case GL_DEBUG_SEVERITY_MEDIUM: str << "MEDIUM";
-		break;
-	case GL_DEBUG_SEVERITY_HIGH: str << "HIGH";
-		break;
-	}
-	str << "\n---------------------opengl-callback-end--------------\n";
-
-	std::clog << str.str();
-}
-#endif
-
 Application::Application()
 	: _window(nullptr), _windowHeight(720), _windowWidth(1280)
 {
@@ -197,8 +156,7 @@ void Application::Draw(const f32 deltaTime) const
 	_basicShader->SetValue("u_model", glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * rotationMatrix);
 	_cubeGeometry->Bind();
 	_cubeGeometry->DrawElements();
-
-
+	
 	_basicShaderInstanced->Use();
 	_cubeGeometry->Bind();
 	_asteroidInstanceBuffer->Bind();
@@ -215,7 +173,7 @@ void Application::HandleInput(const f32 deltaTime) const
 	_camera->MovementSpeed = SPEED;
 	if (glfwGetKey(_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 	{
-		_camera->MovementSpeed = SPEED * 10;
+		_camera->MovementSpeed = SPEED * 40;
 	}
 
 	if (glfwGetKey(_window, GLFW_KEY_W) == GLFW_PRESS)
@@ -253,7 +211,6 @@ void Application::HandleInput(const f32 deltaTime) const
 		_physicsScene->Boost(Direction::Down);
 		_camera->ProcessKeyboard(CameraMovement::Down, deltaTime);
 	}
-
 }
 
 // shamelessly stolen from the learnopengl tutorial
@@ -262,27 +219,30 @@ std::vector<glm::mat4> CreateAsteroidInstances(s32 instanceCount)
 	std::vector<glm::mat4> modelMatrices;
 
 	srand(glfwGetTime()); // initialize random seed	
-	float radius = 50.0f;
-	float offset = 25.5f;
+	const auto radius = 50.0f;
+	const auto offset = 25.5f;
 	for (unsigned int i = 0; i < instanceCount; i++)
 	{
-		glm::mat4 model = glm::mat4(1.0f);
+		auto model = glm::mat4(1.0f);
 		// 1. translation: displace along circle with 'radius' in range [-offset, offset]
-		float angle = (float)i / (float)instanceCount * 360.0f;
-		float displacement = (rand() % (int)(2.0f * offset * 100)) / 100.0f - offset;
-		float x = sin(angle) * radius + displacement;
-		displacement = (rand() % (int)(2.0f * offset * 100)) / 100.0f - offset;
-		float y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
-		displacement = (rand() % (int)(2.0f * offset * 100)) / 100.0f - offset;
-		float z = cos(angle) * radius + displacement;
+		const auto angle = static_cast<float>(i) / static_cast<float>(instanceCount) * 360.0f;
+		auto displacement = (rand() % static_cast<int>(2.0f * offset * 100)) / 100.0f - offset;
+		
+		const auto x = sin(angle) * radius + displacement;
+		displacement = (rand() % static_cast<int>(2.0f * offset * 100)) / 100.0f - offset;
+		
+		const auto y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
+		displacement = (rand() % static_cast<int>(2.0f * offset * 100)) / 100.0f - offset;
+		
+		const auto z = cos(angle) * radius + displacement;
 		model = glm::translate(model, glm::vec3(x, y, z));
 
 		// 2. scale: Scale between 0.05 and 0.25f
-		float scale = (rand() % 60) / 100.0f + 0.05;
+		const auto scale = (rand() % 60) / 100.0f + 0.05;
 		model = glm::scale(model, glm::vec3(scale));
 
 		// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
-		float rotAngle = (rand() % 360);
+		const auto rotAngle = f32(rand() % 360);
 		model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
 
 		// 4. now add to list of matrices
@@ -295,21 +255,6 @@ std::vector<glm::mat4> CreateAsteroidInstances(s32 instanceCount)
 void Application::Initialize()
 {
 	std::clog << glGetString(GL_VERSION) << '\n';
-
-#if _DEBUG
-	if (glDebugMessageCallback)
-	{
-		std::clog << "registered debug callback\n";
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback(DebugCallback, nullptr);
-		GLuint unusedIds = 0;
-		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unusedIds, true);
-	}
-	else
-	{
-		std::clog << "glDebugMessageCallback not available\n";
-	}
-#endif
 
 	glViewport(0, 0, _windowWidth, _windowHeight);
 	glDisable(GL_CULL_FACE);
@@ -412,20 +357,22 @@ void Application::Update(const f32 deltaTime) const
 	_physicsScene->Step(deltaTime);
 	_camera->Position = _physicsScene->Fetch();
 
+	_basicShader->Use();
 	_basicShader->SetValue("u_model", glm::mat4x4(1.0f));
 	_basicShader->SetValue("u_view", _camera->GetViewMatrix());
 	_basicShader->SetValue("u_projection", _projection);
-	
+
+	_basicShaderInstanced->Use();
 	_basicShaderInstanced->SetValue("u_view", _camera->GetViewMatrix());
 	_basicShaderInstanced->SetValue("u_projection", _projection);
 }
 
-void OnFramebufferResized(GLFWwindow* window, int width, int height)
+void OnFramebufferResized(GLFWwindow* window, const int width, const int height)
 {
 	glViewport(0, 0, width, height);
 }
 
-void OnMouseMove(GLFWwindow* window, double xpos, double ypos)
+void OnMouseMove(GLFWwindow* window, const double xpos, const double ypos)
 {
 	const auto camera = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(window));
 	if (camera != nullptr)
