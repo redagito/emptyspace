@@ -24,7 +24,7 @@ PhysicsScene::PhysicsScene()
     _material = _physics->createMaterial(0.5f, 0.5f, 0.6f);
 
     // World
-    auto transform1 = PxTransform(PxVec3(1.0f));
+    auto transform1 = PxTransform(PxVec3(0.0f));
     auto geometry1 = PxSphereGeometry(1.0f);
     World = PxCreateKinematic(*_physics, transform1, geometry1, *_material, 10.0f);
     World->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
@@ -34,21 +34,26 @@ PhysicsScene::PhysicsScene()
     shapes[0]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
 
     // Camera
-    auto transform2 = PxTransform(PxVec3(0.0f, 0.0f, 5.0f));  // Starting position
+    auto transform2 = PxTransform(PxVec3(0.0f));  // Starting position
     auto geometry2 = PxSphereGeometry(1.0f);
     Camera = PxCreateDynamic(*_physics, transform2, geometry2, *_material, 10.0f);
 
     // Booster
     Booster = PxD6JointCreate(*_physics,
                               World,
-                              PxTransform(PxVec3(1.0f)),
+                              PxTransform(PxVec3(0.0f)),
                               Camera,
-                              PxTransform(PxVec3(1.0f)));
 
-    // Affect position, but not orientation
+                              // Attachment point of the "ship" 
+                              PxTransform(PxVec3(0.0f, 0.0f, 0.0f)));
+
+    // Affect position and orientation
     Booster->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
     Booster->setMotion(PxD6Axis::eY, PxD6Motion::eFREE);
     Booster->setMotion(PxD6Axis::eZ, PxD6Motion::eFREE);
+    Booster->setMotion(PxD6Axis::eTWIST,  PxD6Motion::eFREE);
+    Booster->setMotion(PxD6Axis::eSWING1, PxD6Motion::eFREE);
+    Booster->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
 
     auto stiffness = 0.0f;
     auto damping = 5.0f;
@@ -56,9 +61,11 @@ PhysicsScene::PhysicsScene()
     Booster->setDrive(PxD6Drive::eX, PxD6JointDrive(stiffness, damping, FLT_MAX, true));
     Booster->setDrive(PxD6Drive::eY, PxD6JointDrive(stiffness, damping, FLT_MAX, true));
     Booster->setDrive(PxD6Drive::eZ, PxD6JointDrive(stiffness, damping, FLT_MAX, true));
+    Booster->setDrive(PxD6Drive::eTWIST, PxD6JointDrive(stiffness, damping, FLT_MAX, true));
+    Booster->setDrive(PxD6Drive::eSWING, PxD6JointDrive(stiffness, damping, FLT_MAX, true));
 
-    Booster->setDrivePosition(PxTransform(PxVec3(1.0f)));
-    Booster->setDriveVelocity(PxVec3(PxZero), PxVec3(PxZero));
+    Booster->setDrivePosition(PxTransform(PxVec3(0.0f)));
+    Booster->setDriveVelocity(PxVec3(0.0f), PxVec3(PxZero));
 
     _scene->addActor(*World);
     _scene->addActor(*Camera);
@@ -83,39 +90,62 @@ void PhysicsScene::Step(PxReal deltaTime)
 void PhysicsScene::Boost(Direction direction)
 {
     auto acceleration = 0.05f;
+    
+    // Move relative facing direction
+    auto quat = Camera->getGlobalPose().q;
+    auto xaxis = quat.getBasisVector0();
+    auto yaxis = quat.getBasisVector1();
+    auto zaxis = quat.getBasisVector2();
 
     if (direction == Direction::Forward)
     {
-        Thrust.z -= acceleration;
+        LinearThrust -= zaxis * acceleration;
     }
     if (direction == Direction::Backward)
     {
-        Thrust.z += acceleration;
+        LinearThrust += zaxis * acceleration;
     }
     if (direction == Direction::Left)
     {
-        Thrust.x -= acceleration;
+        LinearThrust -= xaxis * acceleration;
     }
     if (direction == Direction::Right)
     {
-        Thrust.x += acceleration;
+        LinearThrust += xaxis * acceleration;
     }
     if (direction == Direction::Up)
     {
-        Thrust.y += acceleration;
+        LinearThrust += yaxis * acceleration;
     }
     if (direction == Direction::Down)
     {
-        Thrust.y -= acceleration;
+        LinearThrust -= yaxis * acceleration;
+    }
+    if (direction == Direction::RollCW)
+    {
+        AngularThrust.z += acceleration;
+    }
+    if (direction == Direction::RollCW)
+    {
+        AngularThrust.z -= acceleration;
+    }
+    if (direction == Direction::Stop)
+    {
+        LinearThrust = PxVec3(0.0f);
+        AngularThrust = PxVec3(0.0f);
     }
 
-    std::clog << "Thrust (" << Thrust.x << ", " << Thrust.y << ", " << Thrust.z << ")" << std::endl;
-    Booster->setDriveVelocity(Thrust, PxVec3(PxZero));
+    std::clog << "LinearThrust (" << LinearThrust.x << ", " << LinearThrust.y << ", " << LinearThrust.z << ")" << std::endl;
+    std::clog << "AngularThrust (" << AngularThrust.x << ", " << AngularThrust.y << ", " << AngularThrust.z << ")" << std::endl;
+    Booster->setDriveVelocity(LinearThrust, AngularThrust);
 }
 
-
-glm::vec3 PhysicsScene::Fetch()
+void PhysicsScene::Tumble(const float x, const float y)
 {
-    auto pose = Camera->getGlobalPose();
-    return glm::vec3(pose.p.x, pose.p.y, pose.p.z);
+    auto sensitivity = 0.001f;
+
+    AngularThrust.x += -y * sensitivity;
+    AngularThrust.y += x * sensitivity;
+
+    Booster->setDriveVelocity(LinearThrust, AngularThrust);
 }

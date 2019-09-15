@@ -35,5 +35,4 @@ private:
 	Shader* _basicShader{};
 	Shader* _basicShaderInstanced{};
 	glm::mat4x4 _projection{};
-	PhysicsScene* _physicsScene{};
 };

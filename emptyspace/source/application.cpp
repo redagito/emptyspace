@@ -7,13 +7,13 @@
 #include <emptyspace/graphics/shader.hpp>
 #include <emptyspace/math/camera.hpp>
 #include <emptyspace/physics.hpp>
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include <cmath>
 #include <vector>
@@ -23,8 +23,13 @@
 void OnFramebufferResized(GLFWwindow* window, int width, int height);
 void OnMouseMove(GLFWwindow* window, double xpos, double ypos);
 
+// Globals
+
 static double oldxpos;
 static double oldypos;
+
+static PhysicsScene* _physicsScene = nullptr;
+
 
 #if _DEBUG
 void APIENTRY DebugCallback(u32 source, u32 type, u32 id, u32 severity, s32 length, const char* message,
@@ -75,7 +80,7 @@ Application::Application()
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
@@ -221,37 +226,46 @@ void Application::HandleInput(const f32 deltaTime) const
 	if (glfwGetKey(_window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		_physicsScene->Boost(Direction::Forward);
-		_camera->ProcessKeyboard(CameraMovement::Forward, deltaTime);
 	}
 	
 	if (glfwGetKey(_window, GLFW_KEY_S) == GLFW_PRESS)
 	{
 		_physicsScene->Boost(Direction::Backward);
-		_camera->ProcessKeyboard(CameraMovement::Backward, deltaTime);
 	}
 	
 	if (glfwGetKey(_window, GLFW_KEY_A) == GLFW_PRESS)
 	{
 		_physicsScene->Boost(Direction::Left);
-		_camera->ProcessKeyboard(CameraMovement::Left, deltaTime);
 	}
 	
 	if (glfwGetKey(_window, GLFW_KEY_D) == GLFW_PRESS)
 	{
 		_physicsScene->Boost(Direction::Right);
-		_camera->ProcessKeyboard(CameraMovement::Right, deltaTime);
+	}
+	
+	if (glfwGetKey(_window, GLFW_KEY_E) == GLFW_PRESS)
+	{
+		_physicsScene->Boost(Direction::RollCW);
+	}
+
+	if (glfwGetKey(_window, GLFW_KEY_Q) == GLFW_PRESS)
+	{
+		_physicsScene->Boost(Direction::RollCCW);
+	}
+
+	if (glfwGetKey(_window, GLFW_KEY_R) == GLFW_PRESS)
+	{
+		_physicsScene->Boost(Direction::Stop);
 	}
 	
 	if (glfwGetKey(_window, GLFW_KEY_SPACE) == GLFW_PRESS)
 	{
 		_physicsScene->Boost(Direction::Up);
-		_camera->ProcessKeyboard(CameraMovement::Up, deltaTime);
 	}
 	
 	if (glfwGetKey(_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 	{
 		_physicsScene->Boost(Direction::Down);
-		_camera->ProcessKeyboard(CameraMovement::Down, deltaTime);
 	}
 
 }
@@ -410,13 +424,24 @@ void Application::Update(const f32 deltaTime) const
 	HandleInput(deltaTime);
 
 	_physicsScene->Step(deltaTime);
-	_camera->Position = _physicsScene->Fetch();
+	auto physicsCamera = _physicsScene->Camera;
+	physx::PxTransform tm = physicsCamera->getGlobalPose();
+	
+	glm::vec3 pos = glm::vec3(tm.p.x, tm.p.y, tm.p.z);
+	glm::quat quat = glm::quat(tm.q.w, tm.q.x, tm.q.y, tm.q.z);
+	glm::vec3 euler = glm::eulerAngles(quat);
+
+    glm::mat4 viewMatrix = glm::translate(
+    	glm::mat4(1.0f), pos
+    ) * glm::toMat4(quat);
+
+    viewMatrix = glm::inverse(viewMatrix);
 
 	_basicShader->SetValue("u_model", glm::mat4x4(1.0f));
-	_basicShader->SetValue("u_view", _camera->GetViewMatrix());
+	_basicShader->SetValue("u_view", viewMatrix);
 	_basicShader->SetValue("u_projection", _projection);
 	
-	_basicShaderInstanced->SetValue("u_view", _camera->GetViewMatrix());
+	_basicShaderInstanced->SetValue("u_view", viewMatrix);
 	_basicShaderInstanced->SetValue("u_projection", _projection);
 }
 
@@ -427,11 +452,19 @@ void OnFramebufferResized(GLFWwindow* window, int width, int height)
 
 void OnMouseMove(GLFWwindow* window, double xpos, double ypos)
 {
-	const auto camera = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(window));
-	if (camera != nullptr)
+	const auto _camera = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(window));
+
+	if (_physicsScene != nullptr)
 	{
-		camera->ProcessMouseMovement(f32(xpos - oldxpos), f32(oldypos - ypos));
-		oldxpos = xpos;
-		oldypos = ypos;
+		_physicsScene->Tumble(static_cast<float>(xpos - oldxpos),
+							  static_cast<float>(oldypos - ypos));
 	}
+
+	if (_camera != nullptr)
+	{
+		_camera->ProcessMouseMovement(f32(xpos - oldxpos), f32(oldypos - ypos));
+	}
+
+	oldxpos = xpos;
+	oldypos = ypos;
 }
