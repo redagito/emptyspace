@@ -291,16 +291,14 @@ void Update(const float deltaTime)
 	HandleInput(deltaTime);
 
 	g_PhysicsScene->Step(deltaTime);
-	auto physicsCamera = g_PhysicsScene->Camera;
-	physx::PxTransform tm = physicsCamera->getGlobalPose();
-	
-	glm::vec3 pos = glm::vec3(tm.p.x, tm.p.y, tm.p.z);
-	glm::quat quat = glm::quat(tm.q.w, tm.q.x, tm.q.y, tm.q.z);
-	glm::vec3 euler = glm::eulerAngles(quat);
+	const auto physicsCamera = g_PhysicsScene->Camera;
+	const auto transform = physicsCamera->getGlobalPose();
 
-    glm::mat4 viewMatrix = glm::translate(
-    	glm::mat4(1.0f), pos
-    ) * glm::toMat4(quat);
+	const auto pos = glm::vec3(transform.p.x, transform.p.y, transform.p.z);
+	const auto quat = glm::quat(transform.q.w, transform.q.x, transform.q.y, transform.q.z);
+	auto euler = glm::eulerAngles(quat);
+
+	auto viewMatrix = glm::translate(glm::mat4(1.0f), pos) * glm::toMat4(quat);
 
     // View is the inverse of camera
     // I.e. camera moves left, view moves right
@@ -333,7 +331,6 @@ void WindowOnMouseMove(GLFWwindow* window, const double xpos, const double ypos)
 		g_MousePosYOld = ypos;
 	}
 }
-
 
 int main(int argc, char* argv[])
 {
