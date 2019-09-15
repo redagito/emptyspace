@@ -13,23 +13,28 @@ enum class Direction
     Left,
     Right,
     Up,
-    Down
+    Down,
+    RollCW,
+    RollCCW,
+    Stop
 };
 
-class PhysicsScene {
+class PhysicsScene
+{
 public:
     PhysicsScene();
     ~PhysicsScene();
 
     void Step(physx::PxReal deltaTime);
     void Boost(Direction direction);
-    glm::vec3 Fetch();
+    void Tumble(const float x, const float y);
 
     physx::PxD6Joint*           Booster;
     physx::PxRigidDynamic*      Camera;
     physx::PxRigidDynamic*      World;
 
-    physx::PxVec3               Thrust { 0.0f, 0.0f, 0.0f };
+    physx::PxVec3               LinearThrust { 0.0f, 0.0f, 0.0f };
+    physx::PxVec3               AngularThrust { 0.0f, 0.0f, 0.0f };
 
 private:
     physx::PxDefaultAllocator      _allocator;

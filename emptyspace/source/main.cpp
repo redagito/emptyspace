@@ -13,6 +13,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include <iostream>
 
@@ -121,49 +122,52 @@ void HandleInput(const f32 deltaTime)
 		glfwSetWindowShouldClose(g_Window, true);
 	}
 
-	g_Camera->MovementSpeed = SPEED;
-	if (glfwGetKey(g_Window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-	{
-		g_Camera->MovementSpeed = SPEED * 40;
-	}
-
 	if (glfwGetKey(g_Window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::Forward);
-		g_Camera->ProcessKeyboard(CameraMovement::Forward, deltaTime);
 	}
-
+	
 	if (glfwGetKey(g_Window, GLFW_KEY_S) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::Backward);
-		g_Camera->ProcessKeyboard(CameraMovement::Backward, deltaTime);
 	}
-
+	
 	if (glfwGetKey(g_Window, GLFW_KEY_A) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::Left);
-		g_Camera->ProcessKeyboard(CameraMovement::Left, deltaTime);
 	}
-
+	
 	if (glfwGetKey(g_Window, GLFW_KEY_D) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::Right);
-		g_Camera->ProcessKeyboard(CameraMovement::Right, deltaTime);
+	}
+	
+	if (glfwGetKey(g_Window, GLFW_KEY_E) == GLFW_PRESS)
+	{
+		g_PhysicsScene->Boost(Direction::RollCW);
 	}
 
+	if (glfwGetKey(g_Window, GLFW_KEY_Q) == GLFW_PRESS)
+	{
+		g_PhysicsScene->Boost(Direction::RollCCW);
+	}
+
+	if (glfwGetKey(g_Window, GLFW_KEY_R) == GLFW_PRESS)
+	{
+		g_PhysicsScene->Boost(Direction::Stop);
+	}
+	
 	if (glfwGetKey(g_Window, GLFW_KEY_SPACE) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::Up);
-		g_Camera->ProcessKeyboard(CameraMovement::Up, deltaTime);
 	}
-
+	
 	if (glfwGetKey(g_Window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::Down);
-		g_Camera->ProcessKeyboard(CameraMovement::Down, deltaTime);
 	}
-
 }
+
 
 void InitializeOpenGL()
 {
@@ -268,15 +272,28 @@ void Update(const float deltaTime)
 	HandleInput(deltaTime);
 
 	g_PhysicsScene->Step(deltaTime);
-	g_Camera->Position = g_PhysicsScene->Fetch();
+	auto physicsCamera = g_PhysicsScene->Camera;
+	physx::PxTransform tm = physicsCamera->getGlobalPose();
+	
+	glm::vec3 pos = glm::vec3(tm.p.x, tm.p.y, tm.p.z);
+	glm::quat quat = glm::quat(tm.q.w, tm.q.x, tm.q.y, tm.q.z);
+	glm::vec3 euler = glm::eulerAngles(quat);
+
+    glm::mat4 viewMatrix = glm::translate(
+    	glm::mat4(1.0f), pos
+    ) * glm::toMat4(quat);
+
+    // View is the inverse of camera
+    // I.e. camera moves left, view moves right
+    viewMatrix = glm::inverse(viewMatrix);
 
 	g_BasicShader->Use();
 	g_BasicShader->SetValue("u_model", glm::mat4x4(1.0f));
-	g_BasicShader->SetValue("u_view", g_Camera->GetViewMatrix());
+	g_BasicShader->SetValue("u_view", viewMatrix);
 	g_BasicShader->SetValue("u_projection", g_CameraProjectionMatrix);
 	  
 	g_BasicShaderInstanced->Use();
-	g_BasicShaderInstanced->SetValue("u_view", g_Camera->GetViewMatrix());
+	g_BasicShaderInstanced->SetValue("u_view", viewMatrix);
 	g_BasicShaderInstanced->SetValue("u_projection", g_CameraProjectionMatrix);
 }
 
@@ -286,15 +303,18 @@ void WindowOnFramebufferResized(GLFWwindow* window, const int width, const int h
 	glViewport(0, 0, width, height);
 }
 
+
 void WindowOnMouseMove(GLFWwindow* window, const double xpos, const double ypos)
 {
-	if (g_Camera != nullptr)
+	if (g_PhysicsScene != nullptr)
 	{
-		g_Camera->ProcessMouseMovement(f32(xpos - g_MousePosXOld), f32(g_MousePosYOld - ypos));
+		g_PhysicsScene->Tumble(static_cast<float>(xpos - g_MousePosXOld),
+							  static_cast<float>(ypos - g_MousePosYOld));
 		g_MousePosXOld = xpos;
 		g_MousePosYOld = ypos;
 	}
 }
+
 
 int main(int argc, char* argv[])
 {
@@ -316,7 +336,7 @@ int main(int argc, char* argv[])
 	g_WindowHeight = u32(0.8f * screenHeight);
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
