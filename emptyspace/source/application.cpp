@@ -211,6 +211,7 @@ void Application::HandleInput(const f32 deltaTime) const
 		_physicsScene->Boost(Direction::Down);
 		_camera->ProcessKeyboard(CameraMovement::Down, deltaTime);
 	}
+	
 }
 
 // shamelessly stolen from the learnopengl tutorial
@@ -254,7 +255,9 @@ std::vector<glm::mat4> CreateAsteroidInstances(s32 instanceCount)
 
 void Application::Initialize()
 {
-	std::clog << glGetString(GL_VERSION) << '\n';
+	std::clog << "GL VENDOR: " << glGetString(GL_VENDOR) << '\n';
+	std::clog << "GL VERSION: " << glGetString(GL_VERSION) << '\n';
+	std::clog << "GL GLSL VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << '\n';
 
 	glViewport(0, 0, _windowWidth, _windowHeight);
 	glDisable(GL_CULL_FACE);
