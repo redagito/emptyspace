@@ -45,14 +45,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)build\bin\</OutDir>
     <IntDir>$(SolutionDir)build\temp\$(ProjectName)\</IntDir>
-    <IncludePath>$(ProjectDir)include\;$(SolutionDir)external\assimp\include\;$(SolutionDir)external\glad\include\;$(SolutionDir)external\glfw\include\;$(SolutionDir)external\glm\;$(SolutionDir)external\physx\include\;$(SolutionDir)external\pxshared\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include\;$(SolutionDir)external\assimp\include\;$(SolutionDir)external\glad\include\;$(SolutionDir)external\glfw\include\;$(SolutionDir)external\glm\;$(SolutionDir)external\physx\include\;$(SolutionDir)external\pxshared\include\;$(SolutionDir)externa\stb-master\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)external\assimp\lib\;$(SolutionDir)external\glfw\lib-vc2019\;$(SolutionDir)external\physx\lib\debug\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)build\bin\</OutDir>
     <IntDir>$(SolutionDir)build\temp\$(ProjectName)\</IntDir>
-    <IncludePath>$(ProjectDir)include\;$(SolutionDir)external\assimp\include\;$(SolutionDir)external\glad\include\;$(SolutionDir)external\glfw\include\;$(SolutionDir)external\glm\;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)external\assimp\lib\;$(SolutionDir)external\glfw\lib-vc2019\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)include\;$(SolutionDir)external\assimp\include\;$(SolutionDir)external\glad\include\;$(SolutionDir)external\glfw\include\;$(SolutionDir)external\glm\;$(SolutionDir)external\physx\include\;$(SolutionDir)external\pxshared\include\;$(SolutionDir)externa\stb-master\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)external\assimp\lib\;$(SolutionDir)external\glfw\lib-vc2019\;$(SolutionDir)external\physx\lib\checked\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
