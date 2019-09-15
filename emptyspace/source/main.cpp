@@ -4,6 +4,7 @@
 #include <emptyspace/graphics/instancebuffer.hpp>
 #include <emptyspace/graphics/vertexpositioncolornormaluv.hpp>
 #include <emptyspace/graphics/shader.hpp>
+#include <emptyspace/graphics/textures.hpp>
 #include <emptyspace/math/camera.hpp>
 #include <emptyspace/physics.hpp>
 
@@ -33,6 +34,8 @@ Geometry* g_GeometryCube = nullptr;
 Shader* g_BasicShader = nullptr;
 Shader* g_BasicShaderInstanced = nullptr;
 InstanceBuffer* g_AsteroidInstanceBuffer = nullptr;
+
+u32 g_TextureCubeSky = {};
 
 static float g_CubeAngle = 0.0f;
 
@@ -258,8 +261,24 @@ void InitializeGame()
 	g_GeometryPlane = new Geometry(planeVertices, planeIndices, geometryVertexFormat);
 	g_GeometryCube = new Geometry(cubeVertices, cubeIndices, geometryVertexFormat);
 
+}
+
+void InitializePrograms()
+{
 	g_BasicShader = new Shader("res/shaders/basic.vs.glsl", "res/shaders/basic.ps.glsl");
 	g_BasicShaderInstanced = new Shader("res/shaders/basic_instanced.vs.glsl", "res/shaders/basic.ps.glsl");
+}
+
+void InitializeTextures()
+{
+	g_TextureCubeSky = CreateTextureCubeFromFiles({
+		"./res/textures/TC_SkySpace_Xn.png",
+		"./res/textures/TC_SkySpace_Xp.png",
+		"./res/textures/TC_SkySpace_Yn.png",
+		"./res/textures/TC_SkySpace_Yp.png",
+		"./res/textures/TC_SkySpace_Zn.png",
+		"./res/textures/TC_SkySpace_Zp.png"
+		});
 }
 
 void Update(const float deltaTime)
@@ -353,6 +372,8 @@ int main(int argc, char* argv[])
 
 	InitializeOpenGL();
 	InitializePhysics();
+	InitializePrograms();
+	InitializeTextures();
 	InitializeGame();
 
 	auto t1 = glfwGetTime();

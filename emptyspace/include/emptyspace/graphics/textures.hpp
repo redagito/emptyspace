@@ -80,7 +80,7 @@ u32 CreateTextureCube(const u32 internalFormat, const u32 format, const s32 widt
 	return tex;
 }
 
-inline u32 CreateTextureCubeFromFile(const std::array<std::string_view, 6>& filepaths, stb_comp_t comp = STBI_rgb_alpha)
+inline u32 CreateTextureCubeFromFiles(const std::array<std::string_view, 6>& filepaths, stb_comp_t comp = STBI_rgb_alpha)
 {
 	int x, y, c;
 	std::array<stbi_uc*, 6> faces{};
