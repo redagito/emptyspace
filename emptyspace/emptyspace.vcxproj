@@ -99,14 +99,12 @@ xcopy /Y /E "$(SolutionDir)external\physx\bin\debug" "$(TargetDir)"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\external\glad\src\glad.c" />
-    <ClCompile Include="source\application.cpp" />
     <ClCompile Include="source\math\camera.cpp" />
     <ClCompile Include="source\graphics\geometry.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\physics.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\emptyspace\application.hpp" />
     <ClInclude Include="include\emptyspace\graphics\instancebuffer.hpp" />
     <ClInclude Include="include\emptyspace\graphics\shader.hpp" />
     <ClInclude Include="include\emptyspace\graphics\textures.hpp" />

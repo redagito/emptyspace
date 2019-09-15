@@ -35,5 +35,5 @@ public:
 	}
 private:
 	u32 _id{};
-	u32 _instanceDataSize{};
+	std::size_t _instanceDataSize{};
 };
