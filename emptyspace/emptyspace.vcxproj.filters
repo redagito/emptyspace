@@ -2,14 +2,12 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="source\main.cpp" />
-    <ClCompile Include="source\application.cpp" />
     <ClCompile Include="..\external\glad\src\glad.c" />
     <ClCompile Include="source\graphics\geometry.cpp" />
     <ClCompile Include="source\math\camera.cpp" />
     <ClCompile Include="source\physics.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\emptyspace\application.hpp" />
     <ClInclude Include="include\emptyspace\types.hpp" />
     <ClInclude Include="include\emptyspace\graphics\geometry.hpp" />
     <ClInclude Include="include\emptyspace\graphics\attributeformat.hpp" />
