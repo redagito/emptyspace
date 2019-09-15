@@ -18,6 +18,7 @@
     <ClInclude Include="include\emptyspace\graphics\shader.hpp" />
     <ClInclude Include="include\emptyspace\graphics\instancebuffer.hpp" />
     <ClInclude Include="include\emptyspace\physics.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\textures.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\basic.vs.glsl" />
