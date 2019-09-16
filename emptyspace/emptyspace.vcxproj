@@ -99,26 +99,37 @@ xcopy /Y /E "$(SolutionDir)external\physx\bin\debug" "$(TargetDir)"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\external\glad\src\glad.c" />
-    <ClCompile Include="source\math\camera.cpp" />
-    <ClCompile Include="source\graphics\geometry.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\physics.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\emptyspace\graphics\instancebuffer.hpp" />
-    <ClInclude Include="include\emptyspace\graphics\shader.hpp" />
-    <ClInclude Include="include\emptyspace\graphics\textures.hpp" />
-    <ClInclude Include="include\emptyspace\math\camera.hpp" />
-    <ClInclude Include="include\emptyspace\graphics\geometry.hpp" />
-    <ClInclude Include="include\emptyspace\graphics\attributeformat.hpp" />
-    <ClInclude Include="include\emptyspace\graphics\vertexpositioncolornormaluv.hpp" />
     <ClInclude Include="include\emptyspace\physics.hpp" />
     <ClInclude Include="include\emptyspace\types.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\shaders\basic.ps.glsl" />
-    <None Include="res\shaders\basic.vs.glsl" />
-    <None Include="res\shaders\basic_instanced.vs.glsl" />
+    <None Include="res\shaders\blur.fs.glsl" />
+    <None Include="res\shaders\blur.vs.glsl" />
+    <None Include="res\shaders\gbuffer.fs.glsl" />
+    <None Include="res\shaders\gbuffer.vs.glsl" />
+    <None Include="res\shaders\main.fs.glsl" />
+    <None Include="res\shaders\main.vs.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\textures\TC_SkyRed_Xn.png" />
+    <Image Include="res\textures\TC_SkyRed_Xp.png" />
+    <Image Include="res\textures\TC_SkyRed_Yn.png" />
+    <Image Include="res\textures\TC_SkyRed_Yp.png" />
+    <Image Include="res\textures\TC_SkyRed_Zn.png" />
+    <Image Include="res\textures\TC_SkyRed_Zp.png" />
+    <Image Include="res\textures\TC_SkySpace_Xn.png" />
+    <Image Include="res\textures\TC_SkySpace_Xp.png" />
+    <Image Include="res\textures\TC_SkySpace_Yn.png" />
+    <Image Include="res\textures\TC_SkySpace_Yp.png" />
+    <Image Include="res\textures\TC_SkySpace_Zn.png" />
+    <Image Include="res\textures\TC_SkySpace_Zp.png" />
+    <Image Include="res\textures\T_Default_D.png" />
+    <Image Include="res\textures\T_Default_N.png" />
+    <Image Include="res\textures\T_Default_S.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -125,7 +125,7 @@ void PhysicsScene::Boost(Direction direction)
     {
         AngularThrust.z += acceleration;
     }
-    if (direction == Direction::RollCW)
+    if (direction == Direction::RollCCW)
     {
         AngularThrust.z -= acceleration;
     }
