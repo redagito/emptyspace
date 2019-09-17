@@ -111,6 +111,7 @@ xcopy /Y /E "$(SolutionDir)external\physx\bin\debug" "$(TargetDir)"</Command>
     <ClInclude Include="include\emptyspace\types.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\README.md" />
     <None Include="res\shaders\blur.fs.glsl" />
     <None Include="res\shaders\blur.vs.glsl" />
     <None Include="res\shaders\gbuffer.fs.glsl" />
