@@ -15,3 +15,11 @@ Yet another space game.
  - R = stop acceleration
  - Mouse = define direction to accelerate
 ```
+
+### Used Libraries
+- GLFW
+- GLAD
+- PhysX
+- nothings/stb (stb_image)
+- glm
+- assimp
