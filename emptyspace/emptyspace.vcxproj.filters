@@ -8,6 +8,10 @@
   <ItemGroup>
     <ClInclude Include="include\emptyspace\types.hpp" />
     <ClInclude Include="include\emptyspace\physics.hpp" />
+    <ClInclude Include="include\emptyspace\textures.hpp" />
+    <ClInclude Include="include\emptyspace\io.hpp" />
+    <ClInclude Include="include\emptyspace\geometry.hpp" />
+    <ClInclude Include="include\emptyspace\program.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\blur.fs.glsl" />

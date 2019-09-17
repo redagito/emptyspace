@@ -103,7 +103,11 @@ xcopy /Y /E "$(SolutionDir)external\physx\bin\debug" "$(TargetDir)"</Command>
     <ClCompile Include="source\physics.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\emptyspace\geometry.hpp" />
+    <ClInclude Include="include\emptyspace\io.hpp" />
     <ClInclude Include="include\emptyspace\physics.hpp" />
+    <ClInclude Include="include\emptyspace\program.hpp" />
+    <ClInclude Include="include\emptyspace\textures.hpp" />
     <ClInclude Include="include\emptyspace\types.hpp" />
   </ItemGroup>
   <ItemGroup>
