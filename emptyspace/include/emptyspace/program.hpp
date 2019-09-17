@@ -11,8 +11,7 @@
 #include <array>
 #include <stdexcept>
 
-
-void ValidateProgram(const u32 shader, const std::string_view filename)
+inline void ValidateProgram(const u32 shader, const std::string_view filename)
 {
 	s32 compiled = 0;
 	glProgramParameteri(shader, GL_PROGRAM_SEPARABLE, GL_TRUE);
@@ -29,7 +28,7 @@ void ValidateProgram(const u32 shader, const std::string_view filename)
 	}
 }
 
-std::tuple<u32, u32, u32> CreateProgram(const std::string_view vertexShaderFilePath, const std::string_view fragmentShaderFilePath)
+inline std::tuple<u32, u32, u32> CreateProgram(const std::string_view vertexShaderFilePath, const std::string_view fragmentShaderFilePath)
 {
 	auto const vertexShaderSource = ReadTextFile(vertexShaderFilePath);
 	auto const fragmentShaderSource = ReadTextFile(fragmentShaderFilePath);
@@ -51,7 +50,7 @@ std::tuple<u32, u32, u32> CreateProgram(const std::string_view vertexShaderFileP
 }
 
 template <typename T>
-inline void SetProgramUniform(u32 shader, s32 location, T const& value)
+void SetProgramUniform(u32 shader, s32 location, T const& value)
 {
 	if constexpr (std::is_same_v<T, s32>)
 	{

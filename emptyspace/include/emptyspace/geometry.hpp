@@ -67,14 +67,14 @@ constexpr std::pair<GLint, GLenum> TypeToSize()
 }
 
 template <typename T>
-inline AttributeFormat CreateAttributeFormat(const u32 index, const u32 relateOffset)
+AttributeFormat CreateAttributeFormat(const u32 index, const u32 relateOffset)
 {
 	auto const [comp_count, type] = TypeToSize<T>();
 	return AttributeFormat{ index, comp_count, type, relateOffset };
 }
 
 template <typename T>
-inline GLuint CreateBuffer(std::vector<T> const& buff, const u32 flags = GL_DYNAMIC_STORAGE_BIT)
+u32 CreateBuffer(std::vector<T> const& buff, const u32 flags = GL_DYNAMIC_STORAGE_BIT)
 {
 	GLuint name = 0;
 	glCreateBuffers(1, &name);

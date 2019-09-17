@@ -11,7 +11,7 @@
 #include <filesystem>
 #include <sstream>
 
-u32 CreateTexture2D(const u32 internalFormat, const u32 format, const s32 width, const s32 height, void* data = nullptr, const u32 filter = GL_LINEAR, const u32 repeat = GL_REPEAT)
+inline u32 CreateTexture2D(const u32 internalFormat, const u32 format, const s32 width, const s32 height, void* data = nullptr, const u32 filter = GL_LINEAR, const u32 repeat = GL_REPEAT)
 {
 	u32 name = 0;
 	glCreateTextures(GL_TEXTURE_2D, 1, &name);
@@ -37,7 +37,7 @@ u32 CreateTextureCube(const u32 internalFormat, const u32 format, const s32 widt
 	glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &name);
 	glTextureStorage2D(name, 1, internalFormat, width, height);
 
-	for (s32 i = 0; i < 6; ++i)
+	for (auto i = 0; i < 6; ++i)
 	{
 		if (data[i])
 		{
@@ -49,8 +49,7 @@ u32 CreateTextureCube(const u32 internalFormat, const u32 format, const s32 widt
 }
 
 using stb_comp_t = decltype(STBI_default);
-
-GLuint CreateTexture2DFromfile(const std::string_view filepath, stb_comp_t comp = STBI_rgb_alpha)
+inline u32 CreateTexture2DFromfile(const std::string_view filepath, stb_comp_t comp = STBI_rgb_alpha)
 {
 	s32 width{};
 	s32 height{};
@@ -81,7 +80,7 @@ GLuint CreateTexture2DFromfile(const std::string_view filepath, stb_comp_t comp 
 	return name;
 }
 
-GLuint CreateTextureCubeFromFile(const std::array<std::string_view, 6> & filepath, stb_comp_t comp = STBI_rgb_alpha)
+inline u32 CreateTextureCubeFromFiles(const std::array<std::string_view, 6>& filePaths, stb_comp_t comp = STBI_rgb_alpha)
 {
 	s32 width{};
 	s32 height{};
@@ -89,7 +88,7 @@ GLuint CreateTextureCubeFromFile(const std::array<std::string_view, 6> & filepat
 
 	std::array<stbi_uc*, 6> faces{};
 
-	auto const [in, ex] = [comp]()
+	auto const [internalFormat, format] = [comp]()
 	{
 		switch (comp)
 		{
@@ -103,10 +102,10 @@ GLuint CreateTextureCubeFromFile(const std::array<std::string_view, 6> & filepat
 
 	for (auto i = 0; i < 6; i++)
 	{
-		faces[i] = stbi_load(filepath[i].data(), &width, &height, &components, comp);
+		faces[i] = stbi_load(filePaths[i].data(), &width, &height, &components, comp);
 	}
 
-	const auto name = CreateTextureCube(in, ex, width, height, faces);
+	const auto name = CreateTextureCube(internalFormat, format, width, height, faces);
 
 	for (auto face : faces)
 	{
@@ -115,18 +114,18 @@ GLuint CreateTextureCubeFromFile(const std::array<std::string_view, 6> & filepat
 	return name;
 }
 
-u32 CreateFramebuffer(const std::vector<GLuint>& colorAttachments, u32 depthAttachment = GL_NONE)
+inline u32 CreateFramebuffer(const std::vector<u32>& colorAttachments, const u32 depthAttachment = GL_NONE)
 {
 	u32 name = 0;
 	glCreateFramebuffers(1, &name);
 
-	for (auto i = 0; i < colorAttachments.size(); i++)
+	for (std::size_t i = 0; i < colorAttachments.size(); i++)
 	{
 		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT0 + i, colorAttachments[i], 0);
 	}
 
 	std::array<u32, 32> drawBuffers{};
-	for (u32 i = 0; i < colorAttachments.size(); i++)
+	for (std::size_t i = 0; i < colorAttachments.size(); i++)
 	{
 		drawBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
 	}

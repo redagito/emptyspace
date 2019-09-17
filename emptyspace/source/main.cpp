@@ -446,7 +446,7 @@ int main(int argc, char* argv[])
 	auto const texture_cube_diffuse = CreateTexture2DFromfile("./res/textures/T_Default_D.png", STBI_rgb);
 	auto const texture_cube_specular = CreateTexture2DFromfile("./res/textures/T_Default_S.png", STBI_grey);
 	auto const texture_cube_normal = CreateTexture2DFromfile("./res/textures/T_Default_N.png", STBI_rgb);
-	auto const texture_skybox = CreateTextureCubeFromFile({
+	auto const texture_skybox = CreateTextureCubeFromFiles({
 		"./res/textures/TC_SkyRed_Xn.png",
 		"./res/textures/TC_SkyRed_Xp.png",
 		"./res/textures/TC_SkyRed_Yn.png",
