@@ -138,19 +138,11 @@ void APIENTRY GLDebugCallback(const u32 source, const u32 type, const u32 id, co
 }
 #endif
 
-template <typename ... Args>
-std::string FormatString(const std::string& format, Args ... args)
-{
-	const size_t size = snprintf(nullptr, 0, format.c_str(), args ...) + 1;
-	const std::unique_ptr<char[]> buffer(new char[size]);
-	snprintf(buffer.get(), size, format.c_str(), args ...);
-	return std::string(buffer.get(), buffer.get() + size - 1);
-}
-
 enum class Shape
 {
 	Cube = 0,
-	Quad = 1
+	Quad = 1,
+	CubeInstanced
 };
 
 struct SceneObject
@@ -166,10 +158,15 @@ struct SceneObject
 	}
 };
 
-template <typename T = std::chrono::milliseconds>
-int64_t Now()
+template <typename T>
+u32 CreateShaderStorageBuffer(T* data, const u32 size)
 {
-	return std::chrono::duration_cast<T>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+	u32 name;
+	glCreateBuffers(1, &name);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, name);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * size, data, GL_MAP_PERSISTENT_BIT);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	return name;
 }
 
 // shamelessly stolen from the learnopengl tutorial
@@ -178,8 +175,8 @@ std::vector<glm::mat4> GameCreateAsteroidInstances(const u32 instanceCount)
 	std::vector<glm::mat4> modelMatrices;
 
 	srand(static_cast<int>(glfwGetTime()));
-	const auto radius = 50.0f;
-	const auto offset = 25.5f;
+	const auto radius = 120.0f;
+	const auto offset = 40.5f;
 	for (u32 i = 0; i < instanceCount; i++)
 	{
 		auto model = glm::mat4(1.0f);
@@ -487,12 +484,15 @@ int main(int argc, char* argv[])
 	/* geometry buffers */
 	auto const emptyVao = []
 	{
-		GLuint name = 0;
+		u32 name = 0;
 		glCreateVertexArrays(1, &name);
 		return name;
 	}();
 	auto const [cubeVao, cubeVbo, cubeIbo] = CreateGeometry(cubeVertices, cubeIndices, vertexFormat);
 	auto const [quadVao, quadVbo, quadIbo] = CreateGeometry(quadVertices, quadIndices, vertexFormat);
+
+	auto const asteroidInstances = GameCreateAsteroidInstances(5000);
+	auto const asteroidsInstanceBuffer = CreateBuffer(asteroidInstances);
 
 	/* shaders */
 	auto const [finalPipelineProgram, finalVertexShader, finalFragmentShader] = CreateProgram("./res/shaders/main.vs.glsl", "./res/shaders/main.fs.glsl");
@@ -520,12 +520,14 @@ int main(int argc, char* argv[])
 
 	std::vector<SceneObject> objects =
 	{
+		SceneObject(Shape::Quad),
 		SceneObject(Shape::Cube),
 		SceneObject(Shape::Cube),
 		SceneObject(Shape::Cube),
 		SceneObject(Shape::Cube),
 		SceneObject(Shape::Cube),
-		SceneObject(Shape::Quad)
+		SceneObject(Shape::CubeInstanced)
+
 	};
 	
 	auto t1 = glfwGetTime();
@@ -536,7 +538,7 @@ int main(int argc, char* argv[])
 	auto framesToAverage = 100;
 	auto frameCounter = 0;
 
-	glfwSwapInterval(1);
+	glfwSwapInterval(0);
 
 	g_MousePosXOld = g_Window_Width / 2.0f;
 	g_MousePosYOld = g_Window_Height / 2.0f;
@@ -579,18 +581,18 @@ int main(int argc, char* argv[])
 		auto const orbitCenter = glm::vec3(0.0f, 0.0f, 0.0f);
 		static auto orbitProgression = 0.0f;
 
-		objects[0].ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter) * glm::rotate(glm::mat4(1.0f), orbitProgression * cubeSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
+		objects[0].ModelViewProjection = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 1.0f, 10.0f));
+		objects[1].ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter) * glm::rotate(glm::mat4(1.0f), orbitProgression * cubeSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
 
-		for (auto i = 0; i < 4; i++)
+		const auto objectCount = objects.size();
+		for (auto i = 2; i < objectCount; i++)
 		{
 			auto const orbitAmount = (orbitProgression * cubeSpeed + float(i) * 90.0f * glm::pi<float>() / 180.0f);
-			auto const orbitPosition = OrbitAxis(orbitAmount, glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f)) + glm::vec3(-2.0f, 0.0f, 0.0f);
-			objects[1 + i].ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter + orbitPosition) * glm::rotate(glm::mat4(1.0f), orbitAmount, glm::vec3(0.0f, -1.0f, 0.0f));
+			auto const orbitPosition = OrbitAxis(orbitAmount, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(2.0f, 0.0f, 2.0f)) + glm::vec3(0.0f, 0.0f, 0.0f);
+			objects[i].ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter + orbitPosition) * glm::rotate(glm::mat4(1.0f), orbitAmount * 7.0f, glm::vec3(0.0f, -1.0f, 0.0f));
 		}
 		orbitProgression += 0.1f;
-
-		objects[5].ModelViewProjection = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -3.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 1.0f, 10.0f));
-
+			   
 		SetProgramUniform(gBufferVertexShader, kUniformView, g_Camera_View);
 
 		/* g-buffer pass */
@@ -618,6 +620,13 @@ int main(int argc, char* argv[])
 			switch (object.ObjectShape)
 			{
 			    case Shape::Cube: glBindVertexArray(cubeVao); break;
+			    case Shape::CubeInstanced:
+				{
+					glBindVertexArray(cubeVao);
+					glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, asteroidsInstanceBuffer);
+					object.ExcludeFromMotionBlur = true;
+					break;
+				}
 			    case Shape::Quad: glBindVertexArray(quadVao); break;
 			}
 
@@ -627,12 +636,14 @@ int main(int argc, char* argv[])
 			SetProgramUniform(gBufferVertexShader, kUniformModelViewProjection, currentModelViewProjection);
 			SetProgramUniform(gBufferVertexShader, kUniformModelViewProjectionInverse, object.ModelViewProjectionPrevious);
 			SetProgramUniform(gBufferVertexShader, kUniformBlurExcept, object.ExcludeFromMotionBlur);
+			SetProgramUniform(gBufferVertexShader, 6, object.ObjectShape == Shape::CubeInstanced);
 
 			object.ModelViewProjectionPrevious = currentModelViewProjection;
 
 			switch (object.ObjectShape)
 			{
 			    case Shape::Cube: glDrawElements(GL_TRIANGLES, u32(cubeIndices.size()), GL_UNSIGNED_BYTE, nullptr); break;
+			    case Shape::CubeInstanced: glDrawElementsInstanced(GL_TRIANGLES, u32(cubeIndices.size()), GL_UNSIGNED_BYTE, nullptr, asteroidInstances.size()); break;
 			    case Shape::Quad: glDrawElements(GL_TRIANGLES, u32(quadIndices.size()), GL_UNSIGNED_BYTE, nullptr); break;
 			}
 		}

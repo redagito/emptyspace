@@ -10,6 +10,7 @@
 #include <iostream>
 #include <array>
 #include <stdexcept>
+#include <sstream>
 
 inline void ValidateProgram(const u32 shader, const std::string_view filename)
 {

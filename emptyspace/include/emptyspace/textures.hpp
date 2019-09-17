@@ -121,13 +121,13 @@ inline u32 CreateFramebuffer(const std::vector<u32>& colorAttachments, const u32
 
 	for (std::size_t i = 0; i < colorAttachments.size(); i++)
 	{
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT0 + i, colorAttachments[i], 0);
+		glNamedFramebufferTexture(name, u32(GL_COLOR_ATTACHMENT0 + i), colorAttachments[i], 0);
 	}
 
 	std::array<u32, 32> drawBuffers{};
 	for (std::size_t i = 0; i < colorAttachments.size(); i++)
 	{
-		drawBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
+		drawBuffers[i] = u32(GL_COLOR_ATTACHMENT0 + i);
 	}
 
 	glNamedFramebufferDrawBuffers(name, u32(colorAttachments.size()), drawBuffers.data());
@@ -139,7 +139,7 @@ inline u32 CreateFramebuffer(const std::vector<u32>& colorAttachments, const u32
 
 	if (glCheckNamedFramebufferStatus(name, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
-		throw std::runtime_error("incomplete framebuffer");
+		throw std::runtime_error("GL: Incomplete framebuffer.");
 	}
 	return name;
 }

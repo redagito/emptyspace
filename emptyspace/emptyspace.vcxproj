@@ -109,6 +109,7 @@ xcopy /Y /E "$(SolutionDir)external\physx\bin\debug" "$(TargetDir)"</Command>
     <ClInclude Include="include\emptyspace\program.hpp" />
     <ClInclude Include="include\emptyspace\textures.hpp" />
     <ClInclude Include="include\emptyspace\types.hpp" />
+    <ClInclude Include="include\emptyspace\format.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
