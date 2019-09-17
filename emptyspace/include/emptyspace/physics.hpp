@@ -1,8 +1,6 @@
 #pragma once
 
-#include <ctype.h>
 #include "PxPhysicsAPI.h"
-#include <emptyspace/math/camera.hpp>
 
 #define PX_RELEASE(x)   if(x)   { x->release(); x = NULL; }
 

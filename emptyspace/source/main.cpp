@@ -1,81 +1,172 @@
-#include <emptyspace/types.hpp>
-#include <emptyspace/graphics/attributeformat.hpp>
-#include <emptyspace/graphics/geometry.hpp>
-#include <emptyspace/graphics/instancebuffer.hpp>
-#include <emptyspace/graphics/vertexpositioncolornormaluv.hpp>
-#include <emptyspace/graphics/shader.hpp>
-#include <emptyspace/graphics/textures.hpp>
-#include <emptyspace/math/camera.hpp>
+
+#include <emptyspace/geometry.hpp>
 #include <emptyspace/physics.hpp>
+#include <emptyspace/program.hpp>
+#include <emptyspace/textures.hpp>
+#include <emptyspace/types.hpp>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+
 #include <glm/mat4x4.hpp>
-#include <glm/gtc/constants.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec2.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
-
-u32 g_WindowWidth = {1920};
-u32 g_WindowHeight = {1080};
-GLFWwindow* g_Window = nullptr;
-
-Camera* g_Camera = nullptr;
-PhysicsScene* g_PhysicsScene = nullptr;
+#include <vector>
+#include <sstream>
+#include <filesystem>
+#include <array>
+#include <fstream>
 
 static f64 g_MousePosXOld = {};
 static f64 g_MousePosYOld = {};
 
-glm::mat4 g_CameraProjectionMatrix = glm::mat4(1.0f);
+u32 g_Window_Width = {1920};
+u32 g_Window_Height = {1080};
+GLFWwindow* g_Window = nullptr;
 
-Geometry* g_GeometryPlane = nullptr;
-Geometry* g_GeometryCube = nullptr;
-Shader* g_BasicShader = nullptr;
-Shader* g_BasicShaderInstanced = nullptr;
-InstanceBuffer* g_AsteroidInstanceBuffer = nullptr;
-
-u32 g_TextureCubeSky = {};
+PhysicsScene* g_PhysicsScene = nullptr;
+glm::mat4 g_Camera_View = glm::mat4(1.0f);
 
 static float g_CubeAngle = 0.0f;
 
-void CleanUp()
+inline glm::vec3 OrbitAxis(const f32 angle, const glm::vec3& axis, const glm::vec3& spread)
 {
-	delete g_GeometryCube;
-	delete g_GeometryPlane;
-	delete g_AsteroidInstanceBuffer;
-	delete g_BasicShader;
-	delete g_BasicShaderInstanced;
-	
-	
-	delete g_Camera;
-	delete g_PhysicsScene;
-
-	glfwDestroyWindow(g_Window);
-	glfwTerminate();
+	return glm::angleAxis(angle, axis) * spread;
 }
 
-void Draw(const float deltaTime)
+inline float Lerp(const f32 a, const f32 b, const f32 f)
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	return a + f * (b - a);
+}
 
-	g_BasicShader->Use();
+#if _DEBUG
+void APIENTRY GLDebugCallback(const u32 source, const u32 type, const u32 id, const u32 severity, s32 length, const GLchar* message, const void* userParam)
+{
+	std::ostringstream str;
+	str << "---------------------GL CALLBACK---------------------\n";
+	str << "Message: " << message << '\n';
+	str << "Source: ";
+	switch (source) 
+	{
+		case GL_DEBUG_SOURCE_API:
+		    str << "API";
+			break;
+		case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+		    str << "WINDOW_SYSTEM";
+			break;
+		case GL_DEBUG_SOURCE_SHADER_COMPILER:
+		    str << "SHADER_COMPILER";
+			break;
+		case GL_DEBUG_SOURCE_THIRD_PARTY:
+		    str << "THIRD_PARTY";
+			break;
+		case GL_DEBUG_SOURCE_APPLICATION:
+		    str << "APPLICATION";
+			break;
+		case GL_DEBUG_SOURCE_OTHER:
+		    str << "OTHER";
+			break;
+		default:
+			str << "UNKNOWN SOURCE";
+			break;
+	}
+	str << '\n';
+	str << "Type: ";
+	switch (type)
+	{
+		case GL_DEBUG_TYPE_ERROR:
+		    str << "ERROR";
+			break;
+		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		    str << "DEPRECATED_BEHAVIOR";
+			break;
+		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		    str << "UNDEFINED_BEHAVIOR";
+			break;
+		case GL_DEBUG_TYPE_PORTABILITY:
+		    str << "PORTABILITY";
+			break;
+		case GL_DEBUG_TYPE_PERFORMANCE:
+		    str << "PERFORMANCE";
+			break;
+		case GL_DEBUG_TYPE_MARKER:
+		    str << "MARKER";
+			break;
+		case GL_DEBUG_TYPE_PUSH_GROUP:
+		    str << "PUSH_GROUP";
+			break;
+		case GL_DEBUG_TYPE_POP_GROUP:
+		    str << "POP_GROUP";
+			break;
+		case GL_DEBUG_TYPE_OTHER:
+		    str << "OTHER";
+			break;
+		default:
+			str << "UNKNOWN TYPE";
+			break;
+	}
+	str << '\n';
+	str << "Id: " << id << '\n';
+	str << "Severity: ";
+	switch (severity)
+	{
+	    case GL_DEBUG_SEVERITY_NOTIFICATION:
+		    str << "NOTIFICATION";
+			break;
+		case GL_DEBUG_SEVERITY_LOW:
+		    str << "LOW";
+			break;
+		case GL_DEBUG_SEVERITY_MEDIUM:
+		    str << "MEDIUM";
+			break;
+		case GL_DEBUG_SEVERITY_HIGH:
+		    str << "HIGH";
+			break;
+		default:
+			str << "UNKNOWN SEVERITY";
+			break;
+	}
+	str << '\n';
+	str << "---------------------GL CALLBACK---------------------\n";
 
-	g_BasicShader->SetValue("u_model", glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, 0.0f)));
-	g_GeometryPlane->Bind();
-	g_GeometryPlane->DrawElements();
+	std::clog << str.str();
+}
+#endif
 
-	g_CubeAngle += static_cast<float>(deltaTime);
-	const auto rotationMatrix = glm::rotate(glm::mat4(1.0f), g_CubeAngle, glm::vec3(0.0f, 1.0f, 0.0f));
-	g_BasicShader->SetValue("u_model", glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * rotationMatrix);
-	g_GeometryCube->Bind();
-	g_GeometryCube->DrawElements();
+enum class Shape
+{
+	Cube = 0,
+	Quad = 1,
+	CubeInstanced
+};
 
-	g_BasicShaderInstanced->Use();
-	g_GeometryCube->Bind();
-	g_AsteroidInstanceBuffer->Bind();
-	g_GeometryCube->DrawElementsInstanced(1000);
+struct SceneObject
+{
+	glm::mat4 ModelViewProjection;
+	glm::mat4 ModelViewProjectionPrevious;
+	Shape ObjectShape;
+	bool ExcludeFromMotionBlur;
+
+	SceneObject(const Shape shape = Shape::Cube, const bool except = false)
+	    : ModelViewProjection(), ModelViewProjectionPrevious(), ObjectShape(shape), ExcludeFromMotionBlur(except)
+	{
+	}
+};
+
+template <typename T>
+u32 CreateShaderStorageBuffer(T* data, const u32 size)
+{
+	u32 name;
+	glCreateBuffers(1, &name);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, name);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * size, data, GL_MAP_PERSISTENT_BIT);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	return name;
 }
 
 // shamelessly stolen from the learnopengl tutorial
@@ -83,27 +174,27 @@ std::vector<glm::mat4> GameCreateAsteroidInstances(const u32 instanceCount)
 {
 	std::vector<glm::mat4> modelMatrices;
 
-	srand(static_cast<int>(glfwGetTime()));	
-	const auto radius = 50.0f;
-	const auto offset = 25.5f;
+	srand(static_cast<int>(glfwGetTime()));
+	const auto radius = 120.0f;
+	const auto offset = 40.5f;
 	for (u32 i = 0; i < instanceCount; i++)
 	{
 		auto model = glm::mat4(1.0f);
 		// 1. translation: displace along circle with 'radius' in range [-offset, offset]
 		const auto angle = static_cast<float>(i) / static_cast<float>(instanceCount) * 360.0f;
-		auto displacement = (rand() % static_cast<int>(2.0f * offset * 100)) / 100.0f - offset;
+		auto displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
 
 		const auto x = sin(angle) * radius + displacement;
-		displacement = (rand() % static_cast<int>(2.0f * offset * 100)) / 100.0f - offset;
+		displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
 
 		const auto y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
-		displacement = (rand() % static_cast<int>(2.0f * offset * 100)) / 100.0f - offset;
+		displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
 
 		const auto z = cos(angle) * radius + displacement;
 		model = glm::translate(model, glm::vec3(x, y, z));
 
 		// 2. scale: Scale between 0.05 and 0.25f
-		const auto scale = (rand() % 60) / 100.0f + 0.05f;
+		const auto scale = rand() % 60 / 100.0f + 0.05f;
 		model = glm::scale(model, glm::vec3(scale));
 
 		// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
@@ -129,22 +220,22 @@ void HandleInput(const f32 deltaTime)
 	{
 		g_PhysicsScene->Boost(Direction::Forward);
 	}
-	
+
 	if (glfwGetKey(g_Window, GLFW_KEY_S) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::Backward);
 	}
-	
+
 	if (glfwGetKey(g_Window, GLFW_KEY_A) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::Left);
 	}
-	
+
 	if (glfwGetKey(g_Window, GLFW_KEY_D) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::Right);
 	}
-	
+
 	if (glfwGetKey(g_Window, GLFW_KEY_E) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::RollCW);
@@ -159,130 +250,16 @@ void HandleInput(const f32 deltaTime)
 	{
 		g_PhysicsScene->Boost(Direction::Stop);
 	}
-	
+
 	if (glfwGetKey(g_Window, GLFW_KEY_SPACE) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::Up);
 	}
-	
+
 	if (glfwGetKey(g_Window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 	{
 		g_PhysicsScene->Boost(Direction::Down);
 	}
-}
-
-
-void InitializeOpenGL()
-{
-	glViewport(0, 0, g_WindowWidth, g_WindowHeight);
-	glDisable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_TEST);
-	glClearColor(0.05f, 0.05f, 0.05f, 0.05f);
-}
-
-void InitializePhysics()
-{
-	g_PhysicsScene = new PhysicsScene();
-}
-
-void InitializeGame()
-{
-	g_Camera = new Camera(glm::vec3{ 0, 0, 5 });
-	g_Camera->MouseSensitivity = 0.1f;
-	g_CameraProjectionMatrix = glm::perspective(glm::pi<f32>() / 4.0f,
-		static_cast<float>(g_WindowWidth) / static_cast<float>(g_WindowHeight), 0.1f, 512.0f);
-
-	const std::vector<VertexPositionColorNormalUv> planeVertices =
-	{
-		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(0.5f, -0.5f, -1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
-		VertexPositionColorNormalUv(glm::vec3(-0.5f, -0.5f, -1.0f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
-	};
-
-	const std::vector<VertexPositionColorNormalUv> cubeVertices =
-	{
-		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f,-1.0f), glm::vec2(0.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f,-0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f,-1.0f), glm::vec2(1.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f,-0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f,-1.0f), glm::vec2(1.0f, 1.0f)),
-		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f,-1.0f), glm::vec2(0.0f, 1.0f)),
-
-		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
-		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
-
-		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)),
-		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)),
-
-		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
-		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
-
-		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(0.5f, 0.5f,-0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
-		VertexPositionColorNormalUv(glm::vec3(-0.5f, 0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
-
-		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
-		VertexPositionColorNormalUv(glm::vec3(-0.5f,-0.5f,-0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
-		VertexPositionColorNormalUv(glm::vec3(0.5f,-0.5f,-0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f,-1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
-	};
-
-	const std::vector<u8> planeIndices =
-	{
-		0, 1, 2, 2, 3, 0,
-	};
-
-	const std::vector<u8> cubeIndices =
-	{
-		0,   1,  2,  2,  3,  0,
-		4,   5,  6,  6,  7,  4,
-		8,   9, 10, 10, 11,  8,
-
-		12, 13, 14, 14, 15, 12,
-		16, 17, 18, 18, 19, 16,
-		20, 21, 22, 22, 23, 20,
-	};
-
-	const std::vector<AttributeFormat> geometryVertexFormat =
-	{
-		CreateAttributeFormat<glm::vec3>(0, offsetof(VertexPositionColorNormalUv, Position)),
-		CreateAttributeFormat<glm::vec3>(1, offsetof(VertexPositionColorNormalUv, Color)),
-		CreateAttributeFormat<glm::vec3>(2, offsetof(VertexPositionColorNormalUv, Normal)),
-		CreateAttributeFormat<glm::vec2>(3, offsetof(VertexPositionColorNormalUv, Uv))
-	};
-
-	const auto asteroidInstances = GameCreateAsteroidInstances(10000);
-
-	g_AsteroidInstanceBuffer = new InstanceBuffer();
-	g_AsteroidInstanceBuffer->UpdateBuffer(asteroidInstances);
-
-	g_GeometryPlane = new Geometry(planeVertices, planeIndices, geometryVertexFormat);
-	g_GeometryCube = new Geometry(cubeVertices, cubeIndices, geometryVertexFormat);
-
-}
-
-void InitializePrograms()
-{
-	g_BasicShader = new Shader("res/shaders/basic.vs.glsl", "res/shaders/basic.ps.glsl");
-	g_BasicShaderInstanced = new Shader("res/shaders/basic_instanced.vs.glsl", "res/shaders/basic.ps.glsl");
-}
-
-void InitializeTextures()
-{
-	g_TextureCubeSky = CreateTextureCubeFromFiles({
-		"./res/textures/TC_SkySpace_Xn.png",
-		"./res/textures/TC_SkySpace_Xp.png",
-		"./res/textures/TC_SkySpace_Yn.png",
-		"./res/textures/TC_SkySpace_Yp.png",
-		"./res/textures/TC_SkySpace_Zn.png",
-		"./res/textures/TC_SkySpace_Zp.png"
-		});
 }
 
 void Update(const float deltaTime)
@@ -300,33 +277,27 @@ void Update(const float deltaTime)
 
 	auto viewMatrix = glm::translate(glm::mat4(1.0f), pos) * glm::toMat4(quat);
 
-    // View is the inverse of camera
-    // I.e. camera moves left, view moves right
-    viewMatrix = glm::inverse(viewMatrix);
+	// View is the inverse of camera
+	// I.e. camera moves left, view moves right
+	viewMatrix = glm::inverse(viewMatrix);
 
-	g_BasicShader->Use();
-	g_BasicShader->SetValue("u_model", glm::mat4x4(1.0f));
-	g_BasicShader->SetValue("u_view", viewMatrix);
-	g_BasicShader->SetValue("u_projection", g_CameraProjectionMatrix);
-	  
-	g_BasicShaderInstanced->Use();
-	g_BasicShaderInstanced->SetValue("u_view", viewMatrix);
-	g_BasicShaderInstanced->SetValue("u_projection", g_CameraProjectionMatrix);
+	g_Camera_View = viewMatrix;
 }
 
 
 void WindowOnFramebufferResized(GLFWwindow* window, const int width, const int height)
 {
+	g_Window_Width = width;
+	g_Window_Height = height;
 	glViewport(0, 0, width, height);
 }
-
 
 void WindowOnMouseMove(GLFWwindow* window, const double xpos, const double ypos)
 {
 	if (g_PhysicsScene != nullptr)
 	{
 		g_PhysicsScene->Tumble(static_cast<float>(xpos - g_MousePosXOld),
-							  static_cast<float>(ypos - g_MousePosYOld));
+		                       static_cast<float>(ypos - g_MousePosYOld));
 		g_MousePosXOld = xpos;
 		g_MousePosYOld = ypos;
 	}
@@ -341,22 +312,25 @@ int main(int argc, char* argv[])
 	}
 
 	const auto primaryMonitor = glfwGetPrimaryMonitor();
-	s32 screenWidth;
-	s32 screenHeight;
-	s32 workingAreaXPos;
-	s32 workingAreaYPos;
+	s32 screenWidth{};
+	s32 screenHeight{};
+	s32 workingAreaXPos{};
+	s32 workingAreaYPos{};
 
 	glfwGetMonitorWorkarea(primaryMonitor, &workingAreaXPos, &workingAreaYPos, &screenWidth, &screenHeight);
 
-	g_WindowWidth = u32(0.8f * screenWidth);
-	g_WindowHeight = u32(0.8f * screenHeight);
+	g_Window_Width = u32(0.8f * screenWidth);
+	g_Window_Height = u32(0.8f * screenHeight);
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#if _DEBUG
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif
 
-	g_Window = glfwCreateWindow(g_WindowWidth, g_WindowHeight, "emptyspace", nullptr, nullptr);
+	g_Window = glfwCreateWindow(g_Window_Width, g_Window_Height, "emptyspace", nullptr, nullptr);
 	if (g_Window == nullptr)
 	{
 		std::cerr << "GLFW: Unable to create a window.\n";
@@ -366,8 +340,8 @@ int main(int argc, char* argv[])
 
 	glfwSetFramebufferSizeCallback(g_Window, WindowOnFramebufferResized);
 	glfwSetCursorPosCallback(g_Window, WindowOnMouseMove);
-	   	
-	glfwSetWindowPos(g_Window, screenWidth / 2 - (g_WindowWidth / 2), screenHeight / 2 - (g_WindowHeight / 2));
+
+	glfwSetWindowPos(g_Window, screenWidth / 2 - (g_Window_Width / 2), screenHeight / 2 - (g_Window_Height / 2));
 
 	glfwMakeContextCurrent(g_Window);
 	glfwSwapInterval(1);
@@ -378,21 +352,184 @@ int main(int argc, char* argv[])
 		glfwTerminate();
 	}
 
-	std::clog << "GL VENDOR: " << glGetString(GL_VENDOR) << '\n';
-	std::clog << "GL VERSION: " << glGetString(GL_VERSION) << '\n';
-	std::clog << "GL GLSL VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << '\n';
+	std::clog << "GL: VENDOR = " << glGetString(GL_VENDOR) << '\n';
+	std::clog << "GL: VERSION = " << glGetString(GL_VERSION) << '\n';
+	std::clog << "GL: GLSL VERSION = " << glGetString(GL_SHADING_LANGUAGE_VERSION) << '\n';
 
 	if (glfwRawMouseMotionSupported())
 	{
 		glfwSetInputMode(g_Window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	}
 
-	InitializeOpenGL();
-	InitializePhysics();
-	InitializePrograms();
-	InitializeTextures();
-	InitializeGame();
+#if _DEBUG
+	if (glDebugMessageCallback)
+	{
+		std::clog << "GL: Registered OpenGL Debug Callback.\n";
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(GLDebugCallback, nullptr);
+		u32 unusedIds = 0;
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unusedIds, true);
+	}
+	else
+	{
+		std::cerr << "GL: glDebugMessageCallback not available.\n";
+	}
+#endif
 
+	g_PhysicsScene = new PhysicsScene();
+
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_PROGRAM_POINT_SIZE);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+	std::vector<Vertex> const cubeVertices =
+	{
+		Vertex(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 0.0f)),
+		Vertex(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(1.0f, 0.0f)),
+		Vertex(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(1.0f, 1.0f)),
+		Vertex(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 1.0f)),
+
+		Vertex(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+		Vertex(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+		Vertex(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+		Vertex(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+
+		Vertex(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)),
+		Vertex(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)),
+		Vertex(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)),
+		Vertex(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)),
+
+		Vertex(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+		Vertex(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+		Vertex(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+		Vertex(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+
+		Vertex(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+		Vertex(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+		Vertex(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+		Vertex(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+
+		Vertex(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+		Vertex(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+		Vertex(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+		Vertex(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+	};
+
+	std::vector<Vertex> const quadVertices =
+	{
+		Vertex(glm::vec3(-0.5f, 0.0f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+		Vertex(glm::vec3(0.5f, 0.0f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+		Vertex(glm::vec3(0.5f, 0.0f, -0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+		Vertex(glm::vec3(-0.5f, 0.0f, -0.5f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+	};
+
+	std::vector<u8> const cubeIndices =
+	{
+		0, 1, 2, 2, 3, 0,
+		4, 5, 6, 6, 7, 4,
+		8, 9, 10, 10, 11, 8,
+
+		12, 13, 14, 14, 15, 12,
+		16, 17, 18, 18, 19, 16,
+		20, 21, 22, 22, 23, 20,
+	};
+
+	std::vector<u8> const quadIndices =
+	{
+		0, 1, 2, 2, 3, 0,
+	};
+
+	auto const texture_cube_diffuse = CreateTexture2DFromfile("./res/textures/T_Default_D.png", STBI_rgb);
+	auto const texture_cube_specular = CreateTexture2DFromfile("./res/textures/T_Default_S.png", STBI_grey);
+	auto const texture_cube_normal = CreateTexture2DFromfile("./res/textures/T_Default_N.png", STBI_rgb);
+	auto const texture_skybox = CreateTextureCubeFromFiles({
+		"./res/textures/TC_SkyRed_Xn.png",
+		"./res/textures/TC_SkyRed_Xp.png",
+		"./res/textures/TC_SkyRed_Yn.png",
+		"./res/textures/TC_SkyRed_Yp.png",
+		"./res/textures/TC_SkyRed_Zn.png",
+		"./res/textures/TC_SkyRed_Zp.png"
+	});
+
+	const auto screen_width = g_Window_Width;
+	const auto screen_height = g_Window_Height;
+
+	/* framebuffer textures */
+	auto const texture_gbuffer_color = CreateTexture2D(GL_RGB8, GL_RGB, screen_width, screen_height, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_position = CreateTexture2D(GL_RGB16F, GL_RGB, screen_width, screen_height, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_normal = CreateTexture2D(GL_RGB16F, GL_RGB, screen_width, screen_height, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_albedo = CreateTexture2D(GL_RGBA16F, GL_RGBA, screen_width, screen_height, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_depth = CreateTexture2D(GL_DEPTH_COMPONENT32, GL_DEPTH, screen_width, screen_height, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_velocity = CreateTexture2D(GL_RG16F, GL_RG, screen_width, screen_height, nullptr, GL_NEAREST);
+	auto const texture_motion_blur = CreateTexture2D(GL_RGB8, GL_RGB, screen_width, screen_height, nullptr, GL_NEAREST);
+	auto const texture_motion_blur_mask = CreateTexture2D(GL_R8, GL_RED, screen_width, screen_height, nullptr, GL_NEAREST);
+
+	auto const framebufferGeometry = CreateFramebuffer({
+		                                           texture_gbuffer_position, texture_gbuffer_normal,
+		                                           texture_gbuffer_albedo, texture_gbuffer_velocity
+	                                           }, texture_gbuffer_depth);
+	auto const framebufferFinal = CreateFramebuffer({texture_gbuffer_color});
+	auto const framebufferBlur = CreateFramebuffer({texture_motion_blur});
+
+	/* vertex formatting information */
+	std::vector<AttributeFormat> const vertexFormat =
+	{
+		CreateAttributeFormat<glm::vec3>(0, offsetof(Vertex, Position)),
+		CreateAttributeFormat<glm::vec3>(1, offsetof(Vertex, Color)),
+		CreateAttributeFormat<glm::vec3>(2, offsetof(Vertex, Normal)),
+		CreateAttributeFormat<glm::vec2>(3, offsetof(Vertex, Texcoord))
+	};
+
+	/* geometry buffers */
+	auto const emptyVao = []
+	{
+		u32 name = 0;
+		glCreateVertexArrays(1, &name);
+		return name;
+	}();
+	auto const [cubeVao, cubeVbo, cubeIbo] = CreateGeometry(cubeVertices, cubeIndices, vertexFormat);
+	auto const [quadVao, quadVbo, quadIbo] = CreateGeometry(quadVertices, quadIndices, vertexFormat);
+
+	auto const asteroidInstances = GameCreateAsteroidInstances(5000);
+	auto const asteroidsInstanceBuffer = CreateBuffer(asteroidInstances);
+
+	/* shaders */
+	auto const [finalPipelineProgram, finalVertexShader, finalFragmentShader] = CreateProgram("./res/shaders/main.vs.glsl", "./res/shaders/main.fs.glsl");
+	auto const [gBufferPipelineProgram, gBufferVertexShader, gBufferFragmentShader] = CreateProgram("./res/shaders/gbuffer.vs.glsl", "./res/shaders/gbuffer.fs.glsl");
+	auto const [motionblurPipelineProgram, motionblurVertexShader, motionblurFragmentShader] = CreateProgram("./res/shaders/blur.vs.glsl", "./res/shaders/blur.fs.glsl");
+
+	/* uniforms */
+	constexpr auto kUniformProjection = 0;
+	constexpr auto kUniformCameraPosition = 0;
+	constexpr auto kUniformCameraDirection = 0;
+	constexpr auto kUniformView = 1;
+	constexpr auto kUniformFieldOfView = 1;
+	constexpr auto kUniformAspectRatio = 2;
+	constexpr auto kUniformModel = 2;
+	constexpr auto kUniformLight = 3;
+	constexpr auto kUniformBlurBias = 0;
+	constexpr auto kUniformUvsDiff = 3;
+	constexpr auto kUniformModelViewProjection = 3;
+	constexpr auto kUniformModelViewProjectionInverse = 4;
+	constexpr auto kUniformBlurExcept = 5;
+
+	constexpr auto fieldOfView = glm::radians(60.0f);
+	auto const cameraProjection = glm::perspective(fieldOfView, float(g_Window_Width) / float(g_Window_Height), 0.1f, 1000.0f);
+	SetProgramUniform(gBufferVertexShader, kUniformProjection, cameraProjection);
+
+	std::vector<SceneObject> objects =
+	{
+		SceneObject(Shape::Quad),
+		SceneObject(Shape::Cube),
+		SceneObject(Shape::Cube),
+		SceneObject(Shape::Cube),
+		SceneObject(Shape::Cube),
+		SceneObject(Shape::Cube),
+		SceneObject(Shape::CubeInstanced)
+
+	};
+	
 	auto t1 = glfwGetTime();
 
 	auto deltaTimeAverage = 0.0f;
@@ -403,8 +540,8 @@ int main(int argc, char* argv[])
 
 	glfwSwapInterval(0);
 
-	g_MousePosXOld = g_WindowWidth / 2.0f;
-	g_MousePosYOld = g_WindowHeight / 2.0f;
+	g_MousePosXOld = g_Window_Width / 2.0f;
+	g_MousePosYOld = g_Window_Height / 2.0f;
 	glfwSetCursorPos(g_Window, g_MousePosXOld, g_MousePosYOld);
 	glfwSetInputMode(g_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -426,8 +563,8 @@ int main(int argc, char* argv[])
 				sqrt(framesToAverage);
 
 			char str[76];
-			sprintf_s(str, "emptyspace, frame = %.3fms +/- %.4fms, fps = %.1f, %d frames", (deltaTimeAverage * 1000.0f),
-				1000.0f * deltaTimeStandardError, 1.0f / deltaTimeAverage, framesToAverage);
+			sprintf_s(str, "emptyspace, frame = %.3fms +/- %.4fms, fps = %.1f, %d frames", deltaTimeAverage * 1000.0f,
+			          1000.0f * deltaTimeStandardError, 1.0f / deltaTimeAverage, framesToAverage);
 			glfwSetWindowTitle(g_Window, str);
 
 			framesToAverage = static_cast<int>(1.0f / deltaTimeAverage);
@@ -438,12 +575,134 @@ int main(int argc, char* argv[])
 		}
 
 		Update(deltaTime);
-		Draw(deltaTime);
+
+		/* Cube orbit */
+		static auto cubeSpeed = 0.125f;
+		auto const orbitCenter = glm::vec3(0.0f, 0.0f, 0.0f);
+		static auto orbitProgression = 0.0f;
+
+		objects[0].ModelViewProjection = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 1.0f, 10.0f));
+		objects[1].ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter) * glm::rotate(glm::mat4(1.0f), orbitProgression * cubeSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
+
+		const auto objectCount = objects.size();
+		for (auto i = 2; i < objectCount; i++)
+		{
+			auto const orbitAmount = (orbitProgression * cubeSpeed + float(i) * 90.0f * glm::pi<float>() / 180.0f);
+			auto const orbitPosition = OrbitAxis(orbitAmount, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(2.0f, 0.0f, 2.0f)) + glm::vec3(0.0f, 0.0f, 0.0f);
+			objects[i].ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter + orbitPosition) * glm::rotate(glm::mat4(1.0f), orbitAmount * 7.0f, glm::vec3(0.0f, -1.0f, 0.0f));
+		}
+		orbitProgression += 0.1f;
+			   
+		SetProgramUniform(gBufferVertexShader, kUniformView, g_Camera_View);
+
+		/* g-buffer pass */
+		static auto const ViewportWidth = screen_width;
+		static auto const ViewportHeight = screen_height;
+		glViewport(0, 0, ViewportWidth, ViewportHeight);
+
+		auto const depthClearValue = 1.0f;
+		glClearNamedFramebufferfv(framebufferGeometry, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
+		glClearNamedFramebufferfv(framebufferGeometry, GL_COLOR, 1, glm::value_ptr(glm::vec3(0.0f)));
+		glClearNamedFramebufferfv(framebufferGeometry, GL_COLOR, 2, glm::value_ptr(glm::vec4(0.0f)));
+		glClearNamedFramebufferfv(framebufferGeometry, GL_COLOR, 3, glm::value_ptr(glm::vec2(0.0f)));
+		glClearNamedFramebufferfv(framebufferGeometry, GL_DEPTH, 0, &depthClearValue);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, framebufferGeometry);
+
+		glBindTextureUnit(0, texture_cube_diffuse);
+		glBindTextureUnit(1, texture_cube_specular);
+		glBindTextureUnit(2, texture_cube_normal);
+
+		glBindProgramPipeline(gBufferPipelineProgram);
+
+		for (auto& object : objects)
+		{
+			switch (object.ObjectShape)
+			{
+			    case Shape::Cube: glBindVertexArray(cubeVao); break;
+			    case Shape::CubeInstanced:
+				{
+					glBindVertexArray(cubeVao);
+					glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, asteroidsInstanceBuffer);
+					object.ExcludeFromMotionBlur = true;
+					break;
+				}
+			    case Shape::Quad: glBindVertexArray(quadVao); break;
+			}
+
+			auto const currentModelViewProjection = cameraProjection * g_Camera_View * object.ModelViewProjection;
+
+			SetProgramUniform(gBufferVertexShader, kUniformModel, object.ModelViewProjection);
+			SetProgramUniform(gBufferVertexShader, kUniformModelViewProjection, currentModelViewProjection);
+			SetProgramUniform(gBufferVertexShader, kUniformModelViewProjectionInverse, object.ModelViewProjectionPrevious);
+			SetProgramUniform(gBufferVertexShader, kUniformBlurExcept, object.ExcludeFromMotionBlur);
+			SetProgramUniform(gBufferVertexShader, 6, object.ObjectShape == Shape::CubeInstanced);
+
+			object.ModelViewProjectionPrevious = currentModelViewProjection;
+
+			switch (object.ObjectShape)
+			{
+			    case Shape::Cube: glDrawElements(GL_TRIANGLES, u32(cubeIndices.size()), GL_UNSIGNED_BYTE, nullptr); break;
+			    case Shape::CubeInstanced: glDrawElementsInstanced(GL_TRIANGLES, u32(cubeIndices.size()), GL_UNSIGNED_BYTE, nullptr, asteroidInstances.size()); break;
+			    case Shape::Quad: glDrawElements(GL_TRIANGLES, u32(quadIndices.size()), GL_UNSIGNED_BYTE, nullptr); break;
+			}
+		}
+
+		/* resolve gbuffer */
+		glClearNamedFramebufferfv(framebufferFinal, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
+		glClearNamedFramebufferfv(framebufferFinal, GL_DEPTH, 0, &depthClearValue);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, framebufferFinal);
+
+		glBindTextureUnit(0, texture_gbuffer_position);
+		glBindTextureUnit(1, texture_gbuffer_normal);
+		glBindTextureUnit(2, texture_gbuffer_albedo);
+		glBindTextureUnit(3, texture_gbuffer_depth);
+		glBindTextureUnit(4, texture_skybox);
+
+		glBindProgramPipeline(finalPipelineProgram);
+		glBindVertexArray(emptyVao);
+
+		const auto cameraPosition = g_PhysicsScene->Camera->getGlobalPose().p;
+		SetProgramUniform(finalFragmentShader, kUniformCameraPosition, glm::vec3(cameraPosition.x, cameraPosition.y, cameraPosition.z));
+		SetProgramUniform(finalVertexShader, kUniformCameraDirection, glm::inverse(glm::mat3(g_Camera_View)));
+		SetProgramUniform(finalVertexShader, kUniformFieldOfView, fieldOfView);
+		SetProgramUniform(finalVertexShader, kUniformAspectRatio, float(ViewportWidth) / float(ViewportHeight));
+		SetProgramUniform(finalVertexShader, kUniformUvsDiff, glm::vec2(
+			float(ViewportWidth) / float(screen_width),
+			float(ViewportHeight) / float(screen_height)
+		));
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		/* motion blur */
+
+		glClearNamedFramebufferfv(framebufferBlur, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
+
+		glBindFramebuffer(GL_FRAMEBUFFER, framebufferBlur);
+
+		glBindTextureUnit(0, texture_gbuffer_color);
+		glBindTextureUnit(1, texture_gbuffer_velocity);
+
+		glBindProgramPipeline(motionblurPipelineProgram);
+		glBindVertexArray(emptyVao);
+
+		SetProgramUniform(motionblurFragmentShader, kUniformBlurBias, 4.0f);
+		SetProgramUniform(motionblurVertexShader, kUniformUvsDiff, glm::vec2(
+			float(ViewportWidth) / float(screen_width),
+			float(ViewportHeight) / float(screen_height)
+		));
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		/* final output */
+		glViewport(0, 0, g_Window_Width, g_Window_Height);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBlitNamedFramebuffer(framebufferBlur, 0, 0, 0, ViewportWidth, ViewportHeight, 0, 0, g_Window_Width, g_Window_Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 		glfwSwapBuffers(g_Window);
 	}
-
-	CleanUp();
 
 	return 0;
 }
