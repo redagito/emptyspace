@@ -18,12 +18,9 @@ in in_block
 
 struct Light
 {
-    vec3 Position;
-	vec3 Color;
-	float Attenuation;
-
-	vec4 padding1;
-	float padding2;
+    vec4 Position;
+	vec4 Color;
+	vec4 Attenuation;
 };
 
 layout(std430, binding = 0) buffer lightBuffer
@@ -73,10 +70,10 @@ void main()
 	vec3 ambientLight = vec3(0.0f);
 	vec3 specularLight = vec3(0.0f);
 
-	for (int lightIndex = 0; lightIndex < 3; lightIndex++)
+	for (int lightIndex = 0; lightIndex < 4; lightIndex++)
 	{
-        vec3 lightPosition = u_lights[lightIndex].Position;
-		vec3 lightColor = u_lights[lightIndex].Color;
+        vec3 lightPosition = u_lights[lightIndex].Position.xyz;
+		vec3 lightColor = u_lights[lightIndex].Color.rgb;
 		float lightAttenuation = u_lights[lightIndex].Attenuation.r;
 
 	    float attenuation = CalculateAttenuation(position, lightPosition, lightAttenuation);

@@ -216,10 +216,10 @@ std::vector<glm::mat4> CreateAsteroidInstances(const u32 instanceCount)
 std::vector<Light> CreateLights()
 {
 	std::vector<Light> lights;
-	lights.emplace_back(glm::vec3(-80, 4, +80), glm::vec3(0.0f, 0.0f, 1.0f), 2.0f);
-	lights.emplace_back(glm::vec3(-80, 4, -80), glm::vec3(1.0f, 0.0f, 0.0f), 2.0f);
-	lights.emplace_back(glm::vec3(+80, 4, -80), glm::vec3(0.0f, 0.0f, 1.0f), 2.0f);
-	lights.emplace_back(glm::vec3(+80, 4, +80), glm::vec3(0.2f, 0.3f, 0.1f), 2.0f);
+	lights.emplace_back(glm::vec3(-80, 4, +80), glm::vec3(0.0f, 0.0f, 1.0f), 4.0f);
+	lights.emplace_back(glm::vec3(-80, 4, -80), glm::vec3(1.0f, 0.0f, 0.0f), 4.0f);
+	lights.emplace_back(glm::vec3(+80, 4, -80), glm::vec3(0.0f, 0.0f, 1.0f), 4.0f);
+	lights.emplace_back(glm::vec3(+80, 4, +80), glm::vec3(0.2f, 0.3f, 0.1f), 4.0f);
 
 	return lights;
 }
