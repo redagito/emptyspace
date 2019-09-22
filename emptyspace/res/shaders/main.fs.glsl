@@ -31,30 +31,28 @@ layout(std430, binding = 0) buffer lightBuffer
     Light u_lights[];
 };
 
-float CalculateDiffuse_L(vec3 FragPos, vec3 Normal, vec3 LightPos)
+float CalculateDiffuse_Lambert(vec3 fragmentPosition, vec3 normal, vec3 lightPosition)
 {
-    vec3 lightDir = normalize(LightPos - FragPos);
-    float diffuse = max(dot(lightDir, Normal), 0.0);
+    vec3 lightDir = normalize(lightPosition - fragmentPosition);
+    float diffuse = max(dot(lightDir, normal), 0.0);
     return diffuse;
 }
 
-float CalculateSpecular_BP(vec3 FragPos, vec3 Normal, vec3 LightPos, vec3 cameraPosition, float exp)
+float CalculateSpecular_BlinnPhong(vec3 fragmentPosition, vec3 normal, vec3 lightPosition, vec3 cameraPosition, float attenuationExponent)
 {
-    vec3 lightDir = normalize(LightPos - FragPos);
-    vec3 viewDir = cameraPosition - FragPos; 
+    vec3 lightDir = normalize(lightPosition - fragmentPosition);
+    vec3 viewDir = cameraPosition - fragmentPosition; 
     vec3 halfwayDir = normalize(lightDir + viewDir);
     
-    float spec = pow(max(dot(Normal, halfwayDir), 0.0), exp);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), attenuationExponent);
     return spec;
 }
 
-float CalculateAttenuation(vec3 FragPos, vec3 LightPos, float Attenuation)
+float CalculateAttenuation(vec3 fragmentPosition, vec3 lightPosition, float attenuation)
 {
-    float distance = length(FragPos - LightPos);
-    float value = clamp(1.0f - distance / Attenuation, 0.0, 1.0f);
-    value = value;
+    float distance = length(fragmentPosition - lightPosition);
+    float value = clamp(1.0f - distance / attenuation, 0.0, 1.0f);
     value = sqrt(value);
-    // return 1.0;
     return value;
 }
 
@@ -67,23 +65,28 @@ void main()
 	const float specular = albedo_specular.a;
 	const float depth = texture(t_depth, i.texcoord).r;
 	
-	vec4 final_color = vec4(1.0);
-	vec3 ambient_color = vec3(0.2);
+	vec4 fragmentColor = vec4(1.0);
+	vec3 ambientColor = vec3(0.2);
 
-	vec3 final_light = vec3(0.0f);
-	vec3 diffuse_light = vec3(0.0f);
-	vec3 ambient_light = vec3(0.0f);
-	vec3 specular_light = vec3(0.0f);
-	for (int j = 0; j < 3; j++)
+	vec3 finalLight = vec3(0.0f);
+	vec3 diffuseLight = vec3(0.0f);
+	vec3 ambientLight = vec3(0.0f);
+	vec3 specularLight = vec3(0.0f);
+
+	for (int lightIndex = 0; lightIndex < 3; lightIndex++)
 	{
-	    float attenuation = CalculateAttenuation(position, u_lights[j].Position.xyz, u_lights[j].Attenuation.r);
+        vec3 lightPosition = u_lights[lightIndex].Position;
+		vec3 lightColor = u_lights[lightIndex].Color;
+		float lightAttenuation = u_lights[lightIndex].Attenuation.r;
 
-		vec3 light_color = u_lights[j].Color.rgb;
-	    vec3 light_position = u_lights[j].Position.xyz;
-		diffuse_light += attenuation * CalculateDiffuse_L(position, normal, u_lights[j].Position.xyz) * u_lights[j].Color.rgb;
-		specular_light += attenuation * CalculateSpecular_BP(position, normal, u_lights[j].Position.xyz, u_camera_position, 8);
+	    float attenuation = CalculateAttenuation(position, lightPosition, lightAttenuation);
+		
+		diffuseLight += attenuation * CalculateDiffuse_Lambert(position, normal, lightPosition) * lightColor;
+		specularLight += attenuation * CalculateSpecular_BlinnPhong(position, normal, lightPosition, u_camera_position, 8);
 	}
-	final_color.xyz = (ambient_light + diffuse_light + (specular_light * specular)) * albedo;
+	finalLight = (ambientLight + diffuseLight + (specular * specularLight));
+
+	fragmentColor.xyz = finalLight * albedo;
 
 	if (depth == 1.0)
 	{
@@ -91,6 +94,6 @@ void main()
 	}
 	else
 	{
-		fs_color = final_color;
+		fs_color = fragmentColor;
 	}
 }

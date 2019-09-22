@@ -180,7 +180,7 @@ std::vector<glm::mat4> CreateAsteroidInstances(const u32 instanceCount)
 	std::vector<glm::mat4> modelMatrices;
 
 	srand(static_cast<int>(glfwGetTime()));
-	const auto radius = 60.0f;
+	const auto radius = 100.0f;
 	const auto offset = 40.5f;
 	for (u32 i = 0; i < instanceCount; i++)
 	{
@@ -216,10 +216,10 @@ std::vector<glm::mat4> CreateAsteroidInstances(const u32 instanceCount)
 std::vector<Light> CreateLights()
 {
 	std::vector<Light> lights;
-	lights.emplace_back(Light{ glm::vec3(-40, 1, +40), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f });
-	lights.emplace_back(Light{ glm::vec3(-40, 1, -40), glm::vec3(1.0f, 0.0f, 0.0f), 1.0f });
-	lights.emplace_back(Light{ glm::vec3(+40, 1, -40), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f });
-	lights.emplace_back(Light{ glm::vec3(+40, 1, +40), glm::vec3(0.2f, 0.3f, 0.1f), 1.0f });
+	lights.push_back(Light(glm::vec3(-80, 4, +80), glm::vec3(0.0f, 0.0f, 1.0f), 2.0f));
+	lights.push_back(Light(glm::vec3(-80, 4, -80), glm::vec3(1.0f, 0.0f, 0.0f), 2.0f));
+	lights.push_back(Light(glm::vec3(+80, 4, -80), glm::vec3(0.0f, 0.0f, 1.0f), 2.0f));
+	lights.push_back(Light(glm::vec3(+80, 4, +80), glm::vec3(0.2f, 0.3f, 0.1f), 2.0f));
 
 	return lights;
 }
