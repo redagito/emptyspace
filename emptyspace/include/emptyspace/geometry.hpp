@@ -14,12 +14,6 @@
 #include <filesystem>
 #include <glm/vec4.hpp>
 
-namespace std {
-	namespace filesystem {
-		class path;
-	}
-}
-
 struct Vertex
 {
 	glm::vec3 Position;
@@ -35,14 +29,14 @@ struct Vertex
 
 struct AttributeFormat
 {
-	GLuint Index;
-	GLint Size;
-	GLenum Type;
-	GLuint RelativeOffset;
+	u32 Index;
+	s32 Size;
+	u32 Type;
+	u32 RelativeOffset;
 };
 
 template <typename T>
-constexpr std::pair<GLint, GLenum> TypeToSize()
+constexpr std::pair<s32, u32> TypeToSize()
 {
 	if constexpr (std::is_same_v<T, float>)
 	{
@@ -89,6 +83,10 @@ u32 CreateBuffer(std::vector<T> const& buff, const u32 flags = GL_DYNAMIC_STORAG
 {
 	GLuint name = 0;
 	glCreateBuffers(1, &name);
+#ifdef _DEBUG
+	const auto label = typeid(T).name();
+	glObjectLabel(GL_BUFFER, name, strlen(label), label);
+#endif
 	glNamedBufferStorage(name, sizeof(typename std::vector<T>::value_type) * buff.size(), buff.data(), flags);
 	return name;
 }
@@ -98,6 +96,10 @@ u32 CreateBuffer(std::vector<T> const& buff, const u32 type, const u32 flags = G
 {
 	GLuint name = 0;
 	glCreateBuffers(1, &name);
+#ifdef _DEBUG
+	const auto label = typeid(T).name();
+	glObjectLabel(GL_BUFFER, name, strlen(label), label);
+#endif
 	glBindBuffer(type, name);
 	glBufferData(type, sizeof(typename std::vector<T>::value_type) * buff.size(), buff.data(), flags);
 	glBindBuffer(type, 0);
@@ -112,6 +114,10 @@ std::tuple<u32, u32, u32> CreateGeometry(const std::vector<T>& vertices, const s
 	auto ibo = CreateBuffer(indices, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW);
 
 	glCreateVertexArrays(1, &vao);
+#ifdef _DEBUG
+	const auto label = typeid(T).name();
+	glObjectLabel(GL_BUFFER, vao, strlen(label), label);
+#endif
 	glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(T));
 	glVertexArrayElementBuffer(vao, ibo);
 
@@ -135,36 +141,6 @@ inline std::tuple<u32, u32, u32, u32, u32> CreateGeometryFromFile(const std::fil
 	Assimp::Importer importer;
 	const auto scene = importer.ReadFile(filePath.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_FixInfacingNormals | aiProcess_FindInvalidData);
 	const auto mesh = scene->mMeshes[0];
-	//const auto mesh = scene->mMeshes[0];
-	//for (unsigned int i = 0; i < mesh->mNumVertices; i++)
-	//{
-	//	glm::vec3 position;
-	//	// positions
-	//	position.x = mesh->mVertices[i].x;
-	//	position.y = mesh->mVertices[i].y;
-	//	position.z = mesh->mVertices[i].z;
-
-	//	glm::vec3 normal;
-	//	// normals
-	//	normal.x = mesh->mNormals[i].x;
-	//	normal.y = mesh->mNormals[i].y;
-	//	normal.z = mesh->mNormals[i].z;
-
-	//	glm::vec2 uv(0.0f, 0.0f);
-
-	//	Vertex vertex(position, normal, normal, uv);
-	//	vertices.push_back(vertex);
-	//}
-	//
-	//for (unsigned int i = 0; i < mesh->mNumFaces; i++)
-	//{
-	//	const auto face = mesh->mFaces[i];
-	//	for (unsigned int j = 0; j < face.mNumIndices; j++)
-	//	{
-	//		indices.push_back(face.mIndices[j]);
-	//	}
-	//}
-	//
 
 	for (u32 f = 0; f<mesh->mNumFaces; ++f)
 	{
@@ -199,6 +175,10 @@ inline std::tuple<u32, u32, u32, u32, u32> CreateGeometryFromFile(const std::fil
 	auto ibo = CreateBuffer(indices, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW);
 
 	glCreateVertexArrays(1, &vao);
+#ifdef _DEBUG
+	const auto label = typeid(vertices).name();
+	glObjectLabel(GL_BUFFER, vao, strlen(label), label);
+#endif
 	glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(Vertex));
 	glVertexArrayElementBuffer(vao, ibo);
 
