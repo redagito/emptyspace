@@ -331,3 +331,4 @@ ASALocalRun/
 .mfractor/
 
 !external/physx/**
+!res/**
