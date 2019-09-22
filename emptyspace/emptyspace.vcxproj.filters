@@ -13,6 +13,8 @@
     <ClInclude Include="include\emptyspace\geometry.hpp" />
     <ClInclude Include="include\emptyspace\program.hpp" />
     <ClInclude Include="include\emptyspace\format.hpp" />
+    <ClInclude Include="include\emptyspace\light.hpp" />
+    <ClInclude Include="include\emptyspace\filewatcher.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\blur.fs.glsl" />

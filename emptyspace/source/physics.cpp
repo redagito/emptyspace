@@ -11,7 +11,7 @@ PhysicsScene::PhysicsScene()
 
     _foundation = PxCreateFoundation(PX_PHYSICS_VERSION, _allocator, _errorCallback);
     _physics = PxCreatePhysics(PX_PHYSICS_VERSION, *_foundation,
-                               PxTolerancesScale(), true, 0);
+                               PxTolerancesScale(), true, nullptr);
 
     PxSceneDesc sceneDesc(_physics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.0f, 0.0f, 0.0f);
@@ -79,13 +79,11 @@ PhysicsScene::~PhysicsScene()
     PX_RELEASE(_foundation);
 }
 
-
 void PhysicsScene::Step(PxReal deltaTime)
 {
    _scene->simulate(deltaTime);
    _scene->fetchResults(true);
 }
-
 
 void PhysicsScene::Boost(Direction direction)
 {

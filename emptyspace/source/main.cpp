@@ -1,4 +1,5 @@
 
+#define NOMINMAX
 #include <emptyspace/geometry.hpp>
 #include <emptyspace/physics.hpp>
 #include <emptyspace/program.hpp>
@@ -19,12 +20,14 @@
 #include <vector>
 #include <sstream>
 #include <filesystem>
-#include <array>
-#include <fstream>
+#include "emptyspace/light.hpp"
+#include "emptyspace/filewatcher.hpp"
 
 static f64 g_MousePosXOld = {};
 static f64 g_MousePosYOld = {};
 
+s32 g_Screen_Width{};
+s32 g_Screen_Height{};
 u32 g_Window_Width = {1920};
 u32 g_Window_Height = {1080};
 GLFWwindow* g_Window = nullptr;
@@ -33,6 +36,10 @@ PhysicsScene* g_PhysicsScene = nullptr;
 glm::mat4 g_Camera_View = glm::mat4(1.0f);
 
 static float g_CubeAngle = 0.0f;
+
+Program* g_Program_Final{nullptr};
+Program* g_Program_GBuffer{nullptr};
+Program* g_Program_MotionBlur{nullptr};
 
 inline glm::vec3 OrbitAxis(const f32 angle, const glm::vec3& axis, const glm::vec3& spread)
 {
@@ -45,7 +52,7 @@ inline float Lerp(const f32 a, const f32 b, const f32 f)
 }
 
 #if _DEBUG
-void APIENTRY GLDebugCallback(const u32 source, const u32 type, const u32 id, const u32 severity, s32 length, const GLchar* message, const void* userParam)
+void APIENTRY DebugCallback(const u32 source, const u32 type, const u32 id, const u32 severity, s32 length, const GLchar* message, const void* userParam)
 {
 	std::ostringstream str;
 	str << "---------------------GL CALLBACK---------------------\n";
@@ -142,7 +149,8 @@ enum class Shape
 {
 	Cube = 0,
 	Quad = 1,
-	CubeInstanced
+	CubeInstanced = 2,
+	Ship
 };
 
 struct SceneObject
@@ -158,24 +166,21 @@ struct SceneObject
 	}
 };
 
-template <typename T>
-u32 CreateShaderStorageBuffer(T* data, const u32 size)
+void Cleanup()
 {
-	u32 name;
-	glCreateBuffers(1, &name);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, name);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * size, data, GL_MAP_PERSISTENT_BIT);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-	return name;
+	delete g_Program_GBuffer;
+	delete g_Program_Final;
+	delete g_Program_MotionBlur;
+	delete g_PhysicsScene;
 }
 
 // shamelessly stolen from the learnopengl tutorial
-std::vector<glm::mat4> GameCreateAsteroidInstances(const u32 instanceCount)
+std::vector<glm::mat4> CreateAsteroidInstances(const u32 instanceCount)
 {
 	std::vector<glm::mat4> modelMatrices;
 
 	srand(static_cast<int>(glfwGetTime()));
-	const auto radius = 120.0f;
+	const auto radius = 60.0f;
 	const auto offset = 40.5f;
 	for (u32 i = 0; i < instanceCount; i++)
 	{
@@ -208,6 +213,16 @@ std::vector<glm::mat4> GameCreateAsteroidInstances(const u32 instanceCount)
 	return modelMatrices;
 }
 
+std::vector<Light> CreateLights()
+{
+	std::vector<Light> lights;
+	lights.emplace_back(Light{ glm::vec3(-40, 1, +40), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f });
+	lights.emplace_back(Light{ glm::vec3(-40, 1, -40), glm::vec3(1.0f, 0.0f, 0.0f), 1.0f });
+	lights.emplace_back(Light{ glm::vec3(+40, 1, -40), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f });
+	lights.emplace_back(Light{ glm::vec3(+40, 1, +40), glm::vec3(0.2f, 0.3f, 0.1f), 1.0f });
+
+	return lights;
+}
 
 void HandleInput(const f32 deltaTime)
 {
@@ -284,7 +299,6 @@ void Update(const float deltaTime)
 	g_Camera_View = viewMatrix;
 }
 
-
 void WindowOnFramebufferResized(GLFWwindow* window, const int width, const int height)
 {
 	g_Window_Width = width;
@@ -303,25 +317,18 @@ void WindowOnMouseMove(GLFWwindow* window, const double xpos, const double ypos)
 	}
 }
 
-int main(int argc, char* argv[])
+void GetWorkingArea(s32* screenWidth, s32* screenHeight)
 {
-	if (!glfwInit())
-	{
-		std::cerr << "GLFW: Unable to initialize.\n";
-		return 1;
-	}
-
 	const auto primaryMonitor = glfwGetPrimaryMonitor();
-	s32 screenWidth{};
-	s32 screenHeight{};
+
 	s32 workingAreaXPos{};
 	s32 workingAreaYPos{};
 
-	glfwGetMonitorWorkarea(primaryMonitor, &workingAreaXPos, &workingAreaYPos, &screenWidth, &screenHeight);
+	glfwGetMonitorWorkarea(primaryMonitor, &workingAreaXPos, &workingAreaYPos, screenWidth, screenHeight);
+}
 
-	g_Window_Width = u32(0.8f * screenWidth);
-	g_Window_Height = u32(0.8f * screenHeight);
-
+GLFWwindow* CreateMainWindow(const u32 width, const u32 height, const std::string_view title)
+{
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -330,25 +337,33 @@ int main(int argc, char* argv[])
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
 
-	g_Window = glfwCreateWindow(g_Window_Width, g_Window_Height, "emptyspace", nullptr, nullptr);
-	if (g_Window == nullptr)
+	const auto window = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
+	if (window == nullptr)
 	{
-		std::cerr << "GLFW: Unable to create a window.\n";
 		glfwTerminate();
-		return 1;
+		return nullptr;
 	}
 
-	glfwSetFramebufferSizeCallback(g_Window, WindowOnFramebufferResized);
-	glfwSetCursorPosCallback(g_Window, WindowOnMouseMove);
+	glfwSetFramebufferSizeCallback(window, WindowOnFramebufferResized);
+	glfwSetCursorPosCallback(window, WindowOnMouseMove);
 
-	glfwSetWindowPos(g_Window, screenWidth / 2 - (g_Window_Width / 2), screenHeight / 2 - (g_Window_Height / 2));
+	glfwSetWindowPos(window, (g_Screen_Width / 2) - (g_Window_Width / 2), (g_Screen_Height / 2) - (g_Window_Height / 2));
+	if (glfwRawMouseMotionSupported())
+	{
+		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+	}
 
-	glfwMakeContextCurrent(g_Window);
+	return window;
+}
+
+void InitializeOpenGL(GLFWwindow* window)
+{
+	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
 	if (!gladLoadGL())
 	{
 		std::cerr << "GLAD: Unable to initialize.\n";
-		glfwDestroyWindow(g_Window);
+		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
 
@@ -356,17 +371,12 @@ int main(int argc, char* argv[])
 	std::clog << "GL: VERSION = " << glGetString(GL_VERSION) << '\n';
 	std::clog << "GL: GLSL VERSION = " << glGetString(GL_SHADING_LANGUAGE_VERSION) << '\n';
 
-	if (glfwRawMouseMotionSupported())
-	{
-		glfwSetInputMode(g_Window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-	}
-
 #if _DEBUG
 	if (glDebugMessageCallback)
 	{
 		std::clog << "GL: Registered OpenGL Debug Callback.\n";
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback(GLDebugCallback, nullptr);
+		glDebugMessageCallback(DebugCallback, nullptr);
 		u32 unusedIds = 0;
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unusedIds, true);
 	}
@@ -376,13 +386,63 @@ int main(int argc, char* argv[])
 	}
 #endif
 
-	g_PhysicsScene = new PhysicsScene();
-
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+}
 
+void InitializePhysics()
+{
+	g_PhysicsScene = new PhysicsScene();
+}
+
+//void InitializeFileSystemWatcher()
+//{
+//	FileWatcher fileWatcher{ "../../emptyspace/res/shaders", std::chrono::milliseconds(2000) };
+//	fileWatcher.Start([](std::string pathToWatch, FileStatus fileStatus) -> void
+//		{
+//			if (fileStatus == FileStatus::Modified)
+//			{
+//				std::clog << pathToWatch << " modified.\n";
+//
+//				if ((pathToWatch.find("main.fs.glsl") != std::string::npos || pathToWatch.find("main.vs.glsl") != std::string::npos))
+//				{
+//					delete g_Program_Final;
+//					g_Program_Final = new Program("../../emptyspace/res/shaders/main.vs.glsl", "../../emptyspace/res/shaders/main.fs.glsl");
+//				}
+//			}
+//		});
+//}
+
+int main(int argc, char* argv[])
+{
+	if (!glfwInit())
+	{
+		std::cerr << "GLFW: Unable to initialize.\n";
+		return 1;
+	}
+
+	GetWorkingArea(&g_Screen_Width, &g_Screen_Height);
+
+	g_Window_Width = u32(0.8f * g_Screen_Width);
+	g_Window_Height = u32(0.8f * g_Screen_Height);
+
+	g_Window = CreateMainWindow(g_Window_Width, g_Window_Height, "emptyspace");
+	if (g_Window == nullptr)
+	{
+		std::cerr << "GLFW: Unable to create a window.\n";
+		return 1;
+	}
+
+	InitializeOpenGL(g_Window);
+	InitializePhysics();
+
+	//std::thread t(InitializeFileSystemWatcher);
+	//t.detach();
+
+	
+	   	 
 	std::vector<Vertex> const cubeVertices =
 	{
 		Vertex(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 0.0f)),
@@ -456,7 +516,8 @@ int main(int argc, char* argv[])
 	const auto screen_height = g_Window_Height;
 
 	/* framebuffer textures */
-	auto const texture_gbuffer_color = CreateTexture2D(GL_RGB8, GL_RGB, screen_width, screen_height, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_final = CreateTexture2D(GL_RGB8, GL_RGB, screen_width, screen_height, nullptr, GL_NEAREST);
+	
 	auto const texture_gbuffer_position = CreateTexture2D(GL_RGB16F, GL_RGB, screen_width, screen_height, nullptr, GL_NEAREST);
 	auto const texture_gbuffer_normal = CreateTexture2D(GL_RGB16F, GL_RGB, screen_width, screen_height, nullptr, GL_NEAREST);
 	auto const texture_gbuffer_albedo = CreateTexture2D(GL_RGBA16F, GL_RGBA, screen_width, screen_height, nullptr, GL_NEAREST);
@@ -465,11 +526,8 @@ int main(int argc, char* argv[])
 	auto const texture_motion_blur = CreateTexture2D(GL_RGB8, GL_RGB, screen_width, screen_height, nullptr, GL_NEAREST);
 	auto const texture_motion_blur_mask = CreateTexture2D(GL_R8, GL_RED, screen_width, screen_height, nullptr, GL_NEAREST);
 
-	auto const framebufferGeometry = CreateFramebuffer({
-		                                           texture_gbuffer_position, texture_gbuffer_normal,
-		                                           texture_gbuffer_albedo, texture_gbuffer_velocity
-	                                           }, texture_gbuffer_depth);
-	auto const framebufferFinal = CreateFramebuffer({texture_gbuffer_color});
+	auto const framebufferGeometry = CreateFramebuffer({texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_albedo, texture_gbuffer_velocity}, texture_gbuffer_depth);
+	auto const framebufferFinal = CreateFramebuffer({texture_gbuffer_final});
 	auto const framebufferBlur = CreateFramebuffer({texture_motion_blur});
 
 	/* vertex formatting information */
@@ -490,14 +548,18 @@ int main(int argc, char* argv[])
 	}();
 	auto const [cubeVao, cubeVbo, cubeIbo] = CreateGeometry(cubeVertices, cubeIndices, vertexFormat);
 	auto const [quadVao, quadVbo, quadIbo] = CreateGeometry(quadVertices, quadIndices, vertexFormat);
+	auto const [shipVao, shipVbo, shipIbo, shipVertexCount, shipIndexCount] = CreateGeometryFromFile("./res/models/shipA.obj", vertexFormat);
 
-	auto const asteroidInstances = GameCreateAsteroidInstances(5000);
+	auto const asteroidInstances = CreateAsteroidInstances(50000);
 	auto const asteroidsInstanceBuffer = CreateBuffer(asteroidInstances);
 
+	auto const lights = CreateLights();
+	auto const lightsBuffer = CreateShaderStorageBuffer(lights.data(), lights.size());
+
 	/* shaders */
-	auto const [finalPipelineProgram, finalVertexShader, finalFragmentShader] = CreateProgram("./res/shaders/main.vs.glsl", "./res/shaders/main.fs.glsl");
-	auto const [gBufferPipelineProgram, gBufferVertexShader, gBufferFragmentShader] = CreateProgram("./res/shaders/gbuffer.vs.glsl", "./res/shaders/gbuffer.fs.glsl");
-	auto const [motionblurPipelineProgram, motionblurVertexShader, motionblurFragmentShader] = CreateProgram("./res/shaders/blur.vs.glsl", "./res/shaders/blur.fs.glsl");
+	g_Program_Final = new Program("../../emptyspace/res/shaders/main.vs.glsl", "../../emptyspace/res/shaders/main.fs.glsl");
+	g_Program_GBuffer = new Program("../../emptyspace/res/shaders/gbuffer.vs.glsl", "../../emptyspace/res/shaders/gbuffer.fs.glsl");
+	g_Program_MotionBlur = new Program("../../emptyspace/res/shaders/blur.vs.glsl", "../../emptyspace/res/shaders/blur.fs.glsl");
 
 	/* uniforms */
 	constexpr auto kUniformProjection = 0;
@@ -516,18 +578,19 @@ int main(int argc, char* argv[])
 
 	constexpr auto fieldOfView = glm::radians(60.0f);
 	auto const cameraProjection = glm::perspective(fieldOfView, float(g_Window_Width) / float(g_Window_Height), 0.1f, 1000.0f);
-	SetProgramUniform(gBufferVertexShader, kUniformProjection, cameraProjection);
+	
+	g_Program_GBuffer->SetVertexShaderUniform(kUniformProjection, cameraProjection);
 
 	std::vector<SceneObject> objects =
 	{
 		SceneObject(Shape::Quad),
 		SceneObject(Shape::Cube),
+	    SceneObject(Shape::Ship),
 		SceneObject(Shape::Cube),
 		SceneObject(Shape::Cube),
 		SceneObject(Shape::Cube),
 		SceneObject(Shape::Cube),
 		SceneObject(Shape::CubeInstanced)
-
 	};
 	
 	auto t1 = glfwGetTime();
@@ -575,6 +638,11 @@ int main(int argc, char* argv[])
 		}
 
 		Update(deltaTime);
+		const auto cameraPositionRaw = g_PhysicsScene->Camera->getGlobalPose().p;
+		const auto cameraOrientation = g_PhysicsScene->Camera->getGlobalPose().q;
+		const auto cameraDirectionRaw = cameraOrientation.getBasisVector2();
+		const auto cameraPosition = glm::vec3(cameraPositionRaw.x, cameraPositionRaw.y, cameraPositionRaw.z);
+		const auto cameraDirection = glm::vec3(cameraDirectionRaw.x, cameraDirectionRaw.y, cameraDirectionRaw.z);
 
 		/* Cube orbit */
 		static auto cubeSpeed = 0.125f;
@@ -583,17 +651,18 @@ int main(int argc, char* argv[])
 
 		objects[0].ModelViewProjection = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 1.0f, 10.0f));
 		objects[1].ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter) * glm::rotate(glm::mat4(1.0f), orbitProgression * cubeSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
+		objects[2].ModelViewProjection = glm::translate(glm::mat4(1.0f), cameraPosition - 10.0f * cameraDirection);
 
 		const auto objectCount = objects.size();
-		for (auto i = 2; i < objectCount; i++)
+		for (std::size_t i = 3; i < objectCount; i++)
 		{
 			auto const orbitAmount = (orbitProgression * cubeSpeed + float(i) * 90.0f * glm::pi<float>() / 180.0f);
 			auto const orbitPosition = OrbitAxis(orbitAmount, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(2.0f, 0.0f, 2.0f)) + glm::vec3(0.0f, 0.0f, 0.0f);
 			objects[i].ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter + orbitPosition) * glm::rotate(glm::mat4(1.0f), orbitAmount * 7.0f, glm::vec3(0.0f, -1.0f, 0.0f));
 		}
 		orbitProgression += 0.1f;
-			   
-		SetProgramUniform(gBufferVertexShader, kUniformView, g_Camera_View);
+
+		g_Program_GBuffer->SetVertexShaderUniform(kUniformView, g_Camera_View);
 
 		/* g-buffer pass */
 		static auto const ViewportWidth = screen_width;
@@ -613,7 +682,7 @@ int main(int argc, char* argv[])
 		glBindTextureUnit(1, texture_cube_specular);
 		glBindTextureUnit(2, texture_cube_normal);
 
-		glBindProgramPipeline(gBufferPipelineProgram);
+		g_Program_GBuffer->Use();
 
 		for (auto& object : objects)
 		{
@@ -627,16 +696,17 @@ int main(int argc, char* argv[])
 					object.ExcludeFromMotionBlur = true;
 					break;
 				}
+				case Shape::Ship: glBindVertexArray(shipVao); break;
 			    case Shape::Quad: glBindVertexArray(quadVao); break;
 			}
 
 			auto const currentModelViewProjection = cameraProjection * g_Camera_View * object.ModelViewProjection;
 
-			SetProgramUniform(gBufferVertexShader, kUniformModel, object.ModelViewProjection);
-			SetProgramUniform(gBufferVertexShader, kUniformModelViewProjection, currentModelViewProjection);
-			SetProgramUniform(gBufferVertexShader, kUniformModelViewProjectionInverse, object.ModelViewProjectionPrevious);
-			SetProgramUniform(gBufferVertexShader, kUniformBlurExcept, object.ExcludeFromMotionBlur);
-			SetProgramUniform(gBufferVertexShader, 6, object.ObjectShape == Shape::CubeInstanced);
+			g_Program_GBuffer->SetVertexShaderUniform(kUniformModel, object.ModelViewProjection);
+			g_Program_GBuffer->SetVertexShaderUniform(kUniformModelViewProjection, currentModelViewProjection);
+			g_Program_GBuffer->SetVertexShaderUniform(kUniformModelViewProjectionInverse, object.ModelViewProjectionPrevious);
+			g_Program_GBuffer->SetVertexShaderUniform(kUniformBlurExcept, object.ExcludeFromMotionBlur);
+			g_Program_GBuffer->SetVertexShaderUniform(6, object.ObjectShape == Shape::CubeInstanced);
 
 			object.ModelViewProjectionPrevious = currentModelViewProjection;
 
@@ -645,6 +715,7 @@ int main(int argc, char* argv[])
 			    case Shape::Cube: glDrawElements(GL_TRIANGLES, u32(cubeIndices.size()), GL_UNSIGNED_BYTE, nullptr); break;
 			    case Shape::CubeInstanced: glDrawElementsInstanced(GL_TRIANGLES, u32(cubeIndices.size()), GL_UNSIGNED_BYTE, nullptr, asteroidInstances.size()); break;
 			    case Shape::Quad: glDrawElements(GL_TRIANGLES, u32(quadIndices.size()), GL_UNSIGNED_BYTE, nullptr); break;
+			    case Shape::Ship: glDrawArrays(GL_TRIANGLES, 0, shipVertexCount); break;
 			}
 		}
 
@@ -660,18 +731,18 @@ int main(int argc, char* argv[])
 		glBindTextureUnit(3, texture_gbuffer_depth);
 		glBindTextureUnit(4, texture_skybox);
 
-		glBindProgramPipeline(finalPipelineProgram);
+		g_Program_Final->Use();
 		glBindVertexArray(emptyVao);
 
-		const auto cameraPosition = g_PhysicsScene->Camera->getGlobalPose().p;
-		SetProgramUniform(finalFragmentShader, kUniformCameraPosition, glm::vec3(cameraPosition.x, cameraPosition.y, cameraPosition.z));
-		SetProgramUniform(finalVertexShader, kUniformCameraDirection, glm::inverse(glm::mat3(g_Camera_View)));
-		SetProgramUniform(finalVertexShader, kUniformFieldOfView, fieldOfView);
-		SetProgramUniform(finalVertexShader, kUniformAspectRatio, float(ViewportWidth) / float(ViewportHeight));
-		SetProgramUniform(finalVertexShader, kUniformUvsDiff, glm::vec2(
+		g_Program_Final->SetFragmentShaderUniform(kUniformCameraPosition, glm::vec3(cameraPosition.x, cameraPosition.y, cameraPosition.z));
+		g_Program_Final->SetVertexShaderUniform(kUniformCameraDirection, glm::inverse(glm::mat3(g_Camera_View)));
+		g_Program_Final->SetVertexShaderUniform(kUniformFieldOfView, fieldOfView);
+		g_Program_Final->SetVertexShaderUniform(kUniformAspectRatio, float(ViewportWidth) / float(ViewportHeight));
+		g_Program_Final->SetVertexShaderUniform(kUniformUvsDiff, glm::vec2(
 			float(ViewportWidth) / float(screen_width),
 			float(ViewportHeight) / float(screen_height)
 		));
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightsBuffer);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -681,14 +752,14 @@ int main(int argc, char* argv[])
 
 		glBindFramebuffer(GL_FRAMEBUFFER, framebufferBlur);
 
-		glBindTextureUnit(0, texture_gbuffer_color);
+		glBindTextureUnit(0, texture_gbuffer_final);
 		glBindTextureUnit(1, texture_gbuffer_velocity);
 
-		glBindProgramPipeline(motionblurPipelineProgram);
+		g_Program_MotionBlur->Use();
 		glBindVertexArray(emptyVao);
 
-		SetProgramUniform(motionblurFragmentShader, kUniformBlurBias, 4.0f);
-		SetProgramUniform(motionblurVertexShader, kUniformUvsDiff, glm::vec2(
+		g_Program_MotionBlur->SetFragmentShaderUniform(kUniformBlurBias, 4.0f);
+		g_Program_MotionBlur->SetVertexShaderUniform(kUniformUvsDiff, glm::vec2(
 			float(ViewportWidth) / float(screen_width),
 			float(ViewportHeight) / float(screen_height)
 		));
@@ -703,6 +774,8 @@ int main(int argc, char* argv[])
 
 		glfwSwapBuffers(g_Window);
 	}
+
+	Cleanup();
 
 	return 0;
 }

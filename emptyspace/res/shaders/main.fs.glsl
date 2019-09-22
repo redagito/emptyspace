@@ -16,13 +16,46 @@ in in_block
 	vec3 ray;
 } i;
 
-vec3 calculate_specular(float strength, vec3 color, vec3 view_pos, vec3 vert_pos, vec3 light_dir, vec3 normal)
+struct Light
 {
-	vec3 view_dir = normalize(view_pos - vert_pos);
-	vec3 ref_dir = reflect(-light_dir, normal);
-	
-	float spec = pow(max(dot(view_dir, ref_dir), 0.0), 32.0);
-	return strength * spec * color;
+    vec3 Position;
+	vec3 Color;
+	float Attenuation;
+
+	vec4 padding1;
+	float padding2;
+};
+
+layout(std430, binding = 0) buffer lightBuffer
+{
+    Light u_lights[];
+};
+
+float CalculateDiffuse_L(vec3 FragPos, vec3 Normal, vec3 LightPos)
+{
+    vec3 lightDir = normalize(LightPos - FragPos);
+    float diffuse = max(dot(lightDir, Normal), 0.0);
+    return diffuse;
+}
+
+float CalculateSpecular_BP(vec3 FragPos, vec3 Normal, vec3 LightPos, vec3 cameraPosition, float exp)
+{
+    vec3 lightDir = normalize(LightPos - FragPos);
+    vec3 viewDir = cameraPosition - FragPos; 
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    
+    float spec = pow(max(dot(Normal, halfwayDir), 0.0), exp);
+    return spec;
+}
+
+float CalculateAttenuation(vec3 FragPos, vec3 LightPos, float Attenuation)
+{
+    float distance = length(FragPos - LightPos);
+    float value = clamp(1.0f - distance / Attenuation, 0.0, 1.0f);
+    value = value;
+    value = sqrt(value);
+    // return 1.0;
+    return value;
 }
 
 void main()
@@ -35,16 +68,23 @@ void main()
 	const float depth = texture(t_depth, i.texcoord).r;
 	
 	vec4 final_color = vec4(1.0);
-	vec3 ambient_col = vec3(0.2);
+	vec3 ambient_color = vec3(0.2);
 
-	vec3 light_col = vec3(1.0);
-	vec3 light_pos = vec3(0.0, 8.0, 0.0);
-	vec3 light_dir = normalize(light_pos - position);
-	float light_dif = max(dot(normal, light_dir), 0.0);
-		
-	vec3 light_spec = calculate_specular(specular, light_col, u_camera_position, position, light_dir, normal);
+	vec3 final_light = vec3(0.0f);
+	vec3 diffuse_light = vec3(0.0f);
+	vec3 ambient_light = vec3(0.0f);
+	vec3 specular_light = vec3(0.0f);
+	for (int j = 0; j < 3; j++)
+	{
+	    float attenuation = CalculateAttenuation(position, u_lights[j].Position.xyz, u_lights[j].Attenuation.r);
 
-	final_color.xyz = (ambient_col + (light_dif * light_col) + light_spec) * albedo;
+		vec3 light_color = u_lights[j].Color.rgb;
+	    vec3 light_position = u_lights[j].Position.xyz;
+		diffuse_light += attenuation * CalculateDiffuse_L(position, normal, u_lights[j].Position.xyz) * u_lights[j].Color.rgb;
+		specular_light += attenuation * CalculateSpecular_BP(position, normal, u_lights[j].Position.xyz, u_camera_position, 8);
+	}
+	final_color.xyz = (ambient_light + diffuse_light + (specular_light * specular)) * albedo;
+
 	if (depth == 1.0)
 	{
 		fs_color = texture(tc_skybox, i.ray);
