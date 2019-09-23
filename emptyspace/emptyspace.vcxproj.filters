@@ -24,6 +24,8 @@
     <None Include="res\shaders\main.fs.glsl" />
     <None Include="res\shaders\main.vs.glsl" />
     <None Include="..\README.md" />
+    <None Include="res\shaders\pointlight.vert.glsl" />
+    <None Include="res\shaders\pointlight.frag.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\textures\TC_SkyRed_Xn.png" />

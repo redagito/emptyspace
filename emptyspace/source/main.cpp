@@ -37,9 +37,10 @@ glm::mat4 g_Camera_View = glm::mat4(1.0f);
 
 static float g_CubeAngle = 0.0f;
 
-Program* g_Program_Final{nullptr};
-Program* g_Program_GBuffer{nullptr};
-Program* g_Program_MotionBlur{nullptr};
+Program* g_Program_Final{ nullptr };
+Program* g_Program_GBuffer{ nullptr };
+Program* g_Program_MotionBlur{ nullptr };
+Program* g_Program_Light{ nullptr };
 
 inline glm::vec3 OrbitAxis(const f32 angle, const glm::vec3& axis, const glm::vec3& spread)
 {
@@ -171,6 +172,7 @@ void Cleanup()
 	delete g_Program_GBuffer;
 	delete g_Program_Final;
 	delete g_Program_MotionBlur;
+	delete g_Program_Light;
 	delete g_PhysicsScene;
 }
 
@@ -180,8 +182,8 @@ std::vector<glm::mat4> CreateAsteroidInstances(const u32 instanceCount)
 	std::vector<glm::mat4> modelMatrices;
 
 	srand(static_cast<int>(glfwGetTime()));
-	const auto radius = 100.0f;
-	const auto offset = 40.5f;
+	const auto radius = 200.0f;
+	const auto offset = 100.5f;
 	for (u32 i = 0; i < instanceCount; i++)
 	{
 		auto model = glm::mat4(1.0f);
@@ -199,7 +201,7 @@ std::vector<glm::mat4> CreateAsteroidInstances(const u32 instanceCount)
 		model = glm::translate(model, glm::vec3(x, y, z));
 
 		// 2. scale: Scale between 0.05 and 0.25f
-		const auto scale = rand() % 60 / 100.0f + 0.05f;
+		const auto scale = rand() % 60 / 100.0f + 2.05f;
 		model = glm::scale(model, glm::vec3(scale));
 
 		// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
@@ -213,13 +215,49 @@ std::vector<glm::mat4> CreateAsteroidInstances(const u32 instanceCount)
 	return modelMatrices;
 }
 
+std::vector<Light> CreateRandomLights(const u32 instanceCount)
+{
+	std::vector<Light> lights;
+
+	srand(static_cast<int>(glfwGetTime()));
+	const auto radius = 200.0f;
+	const auto offset = 100.5f;
+	for (u32 i = 0; i < instanceCount; i++)
+	{
+		auto model = glm::mat4(1.0f);
+		// 1. translation: displace along circle with 'radius' in range [-offset, offset]
+		const auto angle = static_cast<float>(i) / static_cast<float>(instanceCount) * 360.0f;
+		auto displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
+
+		const auto x = sin(angle) * radius + displacement;
+		displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
+
+		const auto y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
+		displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
+
+		const auto z = cos(angle) * radius + displacement;
+		const auto position = glm::vec3(x, y, z);
+
+		const auto color = glm::vec3((rand() % 256) / 256.0f, (rand() % 256) / 256.0f, (rand() % 256) / 256.0f);
+
+		// 2. scale: Scale between 0.05 and 0.25f
+		const auto scale = rand() % 60;// / 100.0f + 2.05f;
+		const auto attenuation = glm::vec3(scale);
+
+		// 4. now add to list of matrices
+		lights.emplace_back(position, color, attenuation.r);
+	}
+
+	return lights;
+}
+
 std::vector<Light> CreateLights()
 {
 	std::vector<Light> lights;
-	lights.emplace_back(glm::vec3(-80, 4, +80), glm::vec3(0.0f, 0.0f, 1.0f), 4.0f);
-	lights.emplace_back(glm::vec3(-80, 4, -80), glm::vec3(1.0f, 0.0f, 0.0f), 4.0f);
-	lights.emplace_back(glm::vec3(+80, 4, -80), glm::vec3(0.0f, 0.0f, 1.0f), 4.0f);
-	lights.emplace_back(glm::vec3(+80, 4, +80), glm::vec3(0.2f, 0.3f, 0.1f), 4.0f);
+	lights.emplace_back(glm::vec3(-80, 1, +80), glm::vec3(0.0f, 0.0f, 1.0f), 64.0f);
+	lights.emplace_back(glm::vec3(-80, 1, -80), glm::vec3(1.0f, 1.0f, 0.0f), 20.0f);
+	lights.emplace_back(glm::vec3(+80, 1, -80), glm::vec3(0.0f, 1.0f, 0.0f), 20.0f);
+	lights.emplace_back(glm::vec3(+80, 1, +80), glm::vec3(1.2f, 0.3f, 1.1f), 20.0f);
 
 	return lights;
 }
@@ -437,12 +475,7 @@ int main(int argc, char* argv[])
 
 	InitializeOpenGL(g_Window);
 	InitializePhysics();
-
-	//std::thread t(InitializeFileSystemWatcher);
-	//t.detach();
-
-	
-	   	 
+   	 
 	std::vector<Vertex> const cubeVertices =
 	{
 		Vertex(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 0.0f)),
@@ -523,12 +556,14 @@ int main(int argc, char* argv[])
 	auto const texture_gbuffer_albedo = CreateTexture2D(GL_RGBA16F, GL_RGBA, screen_width, screen_height, nullptr, GL_NEAREST);
 	auto const texture_gbuffer_depth = CreateTexture2D(GL_DEPTH_COMPONENT32, GL_DEPTH, screen_width, screen_height, nullptr, GL_NEAREST);
 	auto const texture_gbuffer_velocity = CreateTexture2D(GL_RG16F, GL_RG, screen_width, screen_height, nullptr, GL_NEAREST);
+	auto const texture_lbuffer_lights = CreateTexture2D(GL_RGB16F, GL_RGB, screen_width, screen_height, nullptr, GL_NEAREST);
 	auto const texture_motion_blur = CreateTexture2D(GL_RGB8, GL_RGB, screen_width, screen_height, nullptr, GL_NEAREST);
 	auto const texture_motion_blur_mask = CreateTexture2D(GL_R8, GL_RED, screen_width, screen_height, nullptr, GL_NEAREST);
 
-	auto const framebufferGeometry = CreateFramebuffer({texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_albedo, texture_gbuffer_velocity}, texture_gbuffer_depth);
-	auto const framebufferFinal = CreateFramebuffer({texture_gbuffer_final});
-	auto const framebufferBlur = CreateFramebuffer({texture_motion_blur});
+	auto const framebufferGeometry = CreateFramebuffer({ texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_albedo, texture_gbuffer_velocity }, texture_gbuffer_depth);
+	auto const framebufferFinal = CreateFramebuffer({ texture_gbuffer_final });
+	auto const framebufferBlur = CreateFramebuffer({ texture_motion_blur });
+	auto const framebufferLights = CreateFramebuffer({ texture_lbuffer_lights });
 
 	/* vertex formatting information */
 	std::vector<AttributeFormat> const vertexFormat =
@@ -537,6 +572,11 @@ int main(int argc, char* argv[])
 		CreateAttributeFormat<glm::vec3>(1, offsetof(Vertex, Color)),
 		CreateAttributeFormat<glm::vec3>(2, offsetof(Vertex, Normal)),
 		CreateAttributeFormat<glm::vec2>(3, offsetof(Vertex, Texcoord))
+	};
+
+	std::vector<AttributeFormat> const lightVertexFormat =
+	{
+		CreateAttributeFormat<glm::vec3>(0, offsetof(VertexPosition, Position))
 	};
 
 	/* geometry buffers */
@@ -548,18 +588,20 @@ int main(int argc, char* argv[])
 	}();
 	auto const [cubeVao, cubeVbo, cubeIbo] = CreateGeometry(cubeVertices, cubeIndices, vertexFormat);
 	auto const [quadVao, quadVbo, quadIbo] = CreateGeometry(quadVertices, quadIndices, vertexFormat);
-	auto const [shipVao, shipVbo, shipIbo, shipVertexCount, shipIndexCount] = CreateGeometryFromFile("./res/models/shipA.obj", vertexFormat);
+	auto const [shipVao, shipVbo, shipIbo, shipVertexCount, shipIndexCount] = CreateGeometryFromFile("./res/models/shipA_noWindshield.obj", vertexFormat);
+	auto const [pointLightVao, pointLightVbo, pointLightIbo, pointLightVertexCount, pointLightIndexCount] = CreatePlainGeometryFromFile("./res/models/PointLight2.obj", lightVertexFormat);
 
 	auto const asteroidInstances = CreateAsteroidInstances(50000);
 	auto const asteroidsInstanceBuffer = CreateBuffer(asteroidInstances);
 
-	auto const lights = CreateLights();
-	auto const lightsBuffer = CreateShaderStorageBuffer(lights.data(), lights.size());
+	auto const lights = CreateRandomLights(200); 
+	//auto const lightsBuffer = CreateShaderStorageBuffer(lights.data(), lights.size());
 
 	/* shaders */
 	g_Program_Final = new Program("../../emptyspace/res/shaders/main.vs.glsl", "../../emptyspace/res/shaders/main.fs.glsl");
 	g_Program_GBuffer = new Program("../../emptyspace/res/shaders/gbuffer.vs.glsl", "../../emptyspace/res/shaders/gbuffer.fs.glsl");
 	g_Program_MotionBlur = new Program("../../emptyspace/res/shaders/blur.vs.glsl", "../../emptyspace/res/shaders/blur.fs.glsl");
+	g_Program_Light = new Program("../../emptyspace/res/shaders/pointlight.vert.glsl", "../../emptyspace/res/shaders/pointlight.frag.glsl");
 
 	/* uniforms */
 	constexpr auto kUniformProjection = 0;
@@ -601,7 +643,7 @@ int main(int argc, char* argv[])
 	auto framesToAverage = 100;
 	auto frameCounter = 0;
 
-	glfwSwapInterval(0);
+	glfwSwapInterval(1);
 
 	g_MousePosXOld = g_Window_Width / 2.0f;
 	g_MousePosYOld = g_Window_Height / 2.0f;
@@ -649,9 +691,11 @@ int main(int argc, char* argv[])
 		auto const orbitCenter = glm::vec3(0.0f, 0.0f, 0.0f);
 		static auto orbitProgression = 0.0f;
 
+		glm::quat q = glm::rotate(glm::mat4(1.0f), cameraDirection.y, glm::vec3(0.0f, 1.0f, 0.0f));
+
 		objects[0].ModelViewProjection = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 1.0f, 10.0f));
 		objects[1].ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter) * glm::rotate(glm::mat4(1.0f), orbitProgression * cubeSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
-		objects[2].ModelViewProjection = glm::translate(glm::mat4(1.0f), cameraPosition - 10.0f * cameraDirection);
+		objects[2].ModelViewProjection = glm::translate(glm::mat4(1.0f), cameraPosition - 2.0f * cameraDirection) * glm::rotate(glm::mat4(1.0f), cameraDirection.x, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::translate(glm::mat4(1.0f), cameraPosition + 2.0f * cameraDirection);
 
 		const auto objectCount = objects.size();
 		for (std::size_t i = 3; i < objectCount; i++)
@@ -664,7 +708,7 @@ int main(int argc, char* argv[])
 
 		g_Program_GBuffer->SetVertexShaderUniform(kUniformView, g_Camera_View);
 
-		/* g-buffer pass */
+		/* g-buffer pass ================================================================================================== begin */
 		static auto const ViewportWidth = screen_width;
 		static auto const ViewportHeight = screen_height;
 		glViewport(0, 0, ViewportWidth, ViewportHeight);
@@ -718,6 +762,37 @@ int main(int argc, char* argv[])
 			    case Shape::Ship: glDrawArrays(GL_TRIANGLES, 0, shipVertexCount); break;
 			}
 		}
+		/* g-buffer pass ================================================================================================== end */
+		/* lights ======================================================================================================= begin */
+		
+		glClearNamedFramebufferfv(framebufferLights, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
+		glClearNamedFramebufferfv(framebufferLights, GL_DEPTH, 0, &depthClearValue);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebufferLights);
+
+		glBindTextureUnit(0, texture_gbuffer_position);
+		glBindTextureUnit(1, texture_gbuffer_normal);
+		glBindTextureUnit(2, texture_gbuffer_depth);
+		
+		g_Program_Light->Use();
+		glBindVertexArray(pointLightVao);
+		glCullFace(GL_FRONT);
+		for (auto& light : lights)
+		{
+			auto model = glm::translate(glm::mat4(1.0f), glm::vec3(light.Position));
+			model = glm::scale(model, glm::vec3(light.Attenuation.x, light.Attenuation.x, light.Attenuation.x));
+			g_Program_Light->SetVertexShaderUniform(0, cameraProjection);
+			g_Program_Light->SetVertexShaderUniform(1, g_Camera_View);
+			g_Program_Light->SetVertexShaderUniform(2, model);
+			g_Program_Light->SetFragmentShaderUniform(0, light.Position);
+			g_Program_Light->SetFragmentShaderUniform(1, light.Color);
+			g_Program_Light->SetFragmentShaderUniform(2, light.Attenuation);
+			g_Program_Light->SetFragmentShaderUniform(3, cameraPosition);
+			
+			glDrawArrays(GL_TRIANGLES, 0, pointLightVertexCount);
+		}
+		glCullFace(GL_BACK);
+
+		/* lights ================================================================================ end */
 
 		/* resolve gbuffer */
 		glClearNamedFramebufferfv(framebufferFinal, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
@@ -730,6 +805,7 @@ int main(int argc, char* argv[])
 		glBindTextureUnit(2, texture_gbuffer_albedo);
 		glBindTextureUnit(3, texture_gbuffer_depth);
 		glBindTextureUnit(4, texture_skybox);
+		glBindTextureUnit(5, texture_lbuffer_lights);
 
 		g_Program_Final->Use();
 		glBindVertexArray(emptyVao);
@@ -742,7 +818,7 @@ int main(int argc, char* argv[])
 			float(ViewportWidth) / float(screen_width),
 			float(ViewportHeight) / float(screen_height)
 		));
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightsBuffer);
+		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightsBuffer);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 

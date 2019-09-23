@@ -14,6 +14,15 @@
 #include <filesystem>
 #include <glm/vec4.hpp>
 
+struct VertexPosition
+{
+	glm::vec3 Position;
+
+	VertexPosition(const glm::vec3& position)
+		: Position(position)
+	{}
+};
+
 struct Vertex
 {
 	glm::vec3 Position;
@@ -131,6 +140,62 @@ std::tuple<u32, u32, u32> CreateGeometry(const std::vector<T>& vertices, const s
 	return std::make_tuple(vao, vbo, ibo);
 }
 
+inline std::tuple<u32, u32, u32, u32, u32> CreatePlainGeometryFromFile(const std::filesystem::path& filePath, const std::vector<AttributeFormat>& attributeFormats)
+{
+	u32 vao = 0;
+
+	std::vector<VertexPosition> vertices;
+	std::vector<u8> indices;
+
+	Assimp::Importer importer;
+	const auto scene = importer.ReadFile(filePath.string(), /*aiProcess_JoinIdenticalVertices |*/ aiProcess_Triangulate | aiProcess_FixInfacingNormals | aiProcess_FindInvalidData);
+	const auto mesh = scene->mMeshes[0];
+
+	for (u32 f = 0; f < mesh->mNumFaces; ++f)
+	{
+		const auto face = mesh->mFaces[f];
+		if (face.mNumIndices != 3)
+		{
+			continue;
+		}
+
+		for (u32 i = 0; i < 3; ++i)
+		{
+			const auto index = face.mIndices[i];
+
+			glm::vec3 position;
+			position.x = mesh->mVertices[index].x;
+			position.y = mesh->mVertices[index].y;
+			position.z = mesh->mVertices[index].z;
+
+			VertexPosition vertex(position);
+			vertices.push_back(vertex);
+
+			indices.push_back(index);
+		}
+	}
+
+	auto vbo = CreateBuffer(vertices, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
+	auto ibo = CreateBuffer(indices, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW);
+
+	glCreateVertexArrays(1, &vao);
+#ifdef _DEBUG
+	const auto label = typeid(vertices).name();
+	glObjectLabel(GL_BUFFER, vao, strlen(label), label);
+#endif
+	glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(VertexPosition));
+	glVertexArrayElementBuffer(vao, ibo);
+
+	for (auto const& format : attributeFormats)
+	{
+		glEnableVertexArrayAttrib(vao, format.Index);
+		glVertexArrayAttribFormat(vao, format.Index, format.Size, format.Type, GL_FALSE, format.RelativeOffset);
+		glVertexArrayAttribBinding(vao, format.Index, 0);
+	}
+
+	return std::make_tuple(vao, vbo, ibo, vertices.size(), indices.size());
+}
+
 inline std::tuple<u32, u32, u32, u32, u32> CreateGeometryFromFile(const std::filesystem::path& filePath, const std::vector<AttributeFormat>& attributeFormats)
 {
 	u32 vao = 0;
@@ -139,7 +204,7 @@ inline std::tuple<u32, u32, u32, u32, u32> CreateGeometryFromFile(const std::fil
 	std::vector<u8> indices;
 
 	Assimp::Importer importer;
-	const auto scene = importer.ReadFile(filePath.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_FixInfacingNormals | aiProcess_FindInvalidData);
+	const auto scene = importer.ReadFile(filePath.string(), /*aiProcess_JoinIdenticalVertices |*/ aiProcess_Triangulate | aiProcess_FixInfacingNormals | aiProcess_FindInvalidData);
 	const auto mesh = scene->mMeshes[0];
 
 	for (u32 f = 0; f<mesh->mNumFaces; ++f)
@@ -160,10 +225,13 @@ inline std::tuple<u32, u32, u32, u32, u32> CreateGeometryFromFile(const std::fil
 			position.z = mesh->mVertices[index].z;
 
 			glm::vec3 normal;
-			normal.x = mesh->mNormals[index].x;
-			normal.y = mesh->mNormals[index].y;
-			normal.z = mesh->mNormals[index].z;
-
+			if (mesh->HasNormals())
+			{
+				normal.x = mesh->mNormals[index].x;
+				normal.y = mesh->mNormals[index].y;
+				normal.z = mesh->mNormals[index].z;
+			}
+			
 			glm::vec2 uv(0.0f, 0.0f);
 
 			Vertex vertex(position, normal, normal, uv);
@@ -190,5 +258,4 @@ inline std::tuple<u32, u32, u32, u32, u32> CreateGeometryFromFile(const std::fil
 	}
 
 	return std::make_tuple(vao, vbo, ibo, vertices.size(), indices.size());
-	
 }
