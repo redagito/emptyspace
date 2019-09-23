@@ -42,6 +42,8 @@ Program* g_Program_GBuffer{ nullptr };
 Program* g_Program_MotionBlur{ nullptr };
 Program* g_Program_Light{ nullptr };
 
+bool g_Enable_MotionBlur{ false };
+
 inline glm::vec3 OrbitAxis(const f32 angle, const glm::vec3& axis, const glm::vec3& spread)
 {
 	return glm::angleAxis(angle, axis) * spread;
@@ -562,7 +564,7 @@ int main(int argc, char* argv[])
 
 	auto const framebufferGeometry = CreateFramebuffer({ texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_albedo, texture_gbuffer_velocity }, texture_gbuffer_depth);
 	auto const framebufferFinal = CreateFramebuffer({ texture_gbuffer_final });
-	auto const framebufferBlur = CreateFramebuffer({ texture_motion_blur });
+	auto const framebufferMotionblur = CreateFramebuffer({ texture_motion_blur });
 	auto const framebufferLights = CreateFramebuffer({ texture_lbuffer_lights });
 
 	/* vertex formatting information */
@@ -589,13 +591,12 @@ int main(int argc, char* argv[])
 	auto const [cubeVao, cubeVbo, cubeIbo] = CreateGeometry(cubeVertices, cubeIndices, vertexFormat);
 	auto const [quadVao, quadVbo, quadIbo] = CreateGeometry(quadVertices, quadIndices, vertexFormat);
 	auto const [shipVao, shipVbo, shipIbo, shipVertexCount, shipIndexCount] = CreateGeometryFromFile("./res/models/shipA_noWindshield.obj", vertexFormat);
-	auto const [pointLightVao, pointLightVbo, pointLightIbo, pointLightVertexCount, pointLightIndexCount] = CreatePlainGeometryFromFile("./res/models/PointLight2.obj", lightVertexFormat);
+	auto const [pointLightVao, pointLightVbo, pointLightIbo, pointLightVertexCount, pointLightIndexCount] = CreatePlainGeometryFromFile("./res/models/PointLight.obj", lightVertexFormat);
 
 	auto const asteroidInstances = CreateAsteroidInstances(50000);
 	auto const asteroidsInstanceBuffer = CreateBuffer(asteroidInstances);
 
 	auto const lights = CreateRandomLights(200); 
-	//auto const lightsBuffer = CreateShaderStorageBuffer(lights.data(), lights.size());
 
 	/* shaders */
 	g_Program_Final = new Program("../../emptyspace/res/shaders/main.vs.glsl", "../../emptyspace/res/shaders/main.fs.glsl");
@@ -776,6 +777,9 @@ int main(int argc, char* argv[])
 		g_Program_Light->Use();
 		glBindVertexArray(pointLightVao);
 		glCullFace(GL_FRONT);
+		
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		for (auto& light : lights)
 		{
 			auto model = glm::translate(glm::mat4(1.0f), glm::vec3(light.Position));
@@ -790,11 +794,12 @@ int main(int argc, char* argv[])
 			
 			glDrawArrays(GL_TRIANGLES, 0, pointLightVertexCount);
 		}
+		glDisable(GL_BLEND);
 		glCullFace(GL_BACK);
 
 		/* lights ================================================================================ end */
 
-		/* resolve gbuffer */
+		/* resolve gbuffer ===================================================================== begin */
 		glClearNamedFramebufferfv(framebufferFinal, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
 		glClearNamedFramebufferfv(framebufferFinal, GL_DEPTH, 0, &depthClearValue);
 
@@ -818,35 +823,38 @@ int main(int argc, char* argv[])
 			float(ViewportWidth) / float(screen_width),
 			float(ViewportHeight) / float(screen_height)
 		));
-		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightsBuffer);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+		/* resolve gbuffer ======================================================================= end */
 
-		/* motion blur */
+		if (g_Enable_MotionBlur)
+		{
+			/* motion blur ========================================================================= begin */
+			glClearNamedFramebufferfv(framebufferMotionblur, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
 
-		glClearNamedFramebufferfv(framebufferBlur, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
+			glBindFramebuffer(GL_FRAMEBUFFER, framebufferMotionblur);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, framebufferBlur);
+			glBindTextureUnit(0, texture_gbuffer_final);
+			glBindTextureUnit(1, texture_gbuffer_velocity);
 
-		glBindTextureUnit(0, texture_gbuffer_final);
-		glBindTextureUnit(1, texture_gbuffer_velocity);
+			g_Program_MotionBlur->Use();
+			glBindVertexArray(emptyVao);
 
-		g_Program_MotionBlur->Use();
-		glBindVertexArray(emptyVao);
+			g_Program_MotionBlur->SetFragmentShaderUniform(kUniformBlurBias, 4.0f);
+			g_Program_MotionBlur->SetVertexShaderUniform(kUniformUvsDiff, glm::vec2(
+				float(ViewportWidth) / float(screen_width),
+				float(ViewportHeight) / float(screen_height)
+			));
 
-		g_Program_MotionBlur->SetFragmentShaderUniform(kUniformBlurBias, 4.0f);
-		g_Program_MotionBlur->SetVertexShaderUniform(kUniformUvsDiff, glm::vec2(
-			float(ViewportWidth) / float(screen_width),
-			float(ViewportHeight) / float(screen_height)
-		));
-
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			/* motion blur =========================================================================== end */
+		}
+		
 		/* final output */
 		glViewport(0, 0, g_Window_Width, g_Window_Height);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glBlitNamedFramebuffer(framebufferBlur, 0, 0, 0, ViewportWidth, ViewportHeight, 0, 0, g_Window_Width, g_Window_Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBlitNamedFramebuffer(g_Enable_MotionBlur ? framebufferMotionblur : framebufferFinal, 0, 0, 0, ViewportWidth, ViewportHeight, 0, 0, g_Window_Width, g_Window_Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 		glfwSwapBuffers(g_Window);
 	}
