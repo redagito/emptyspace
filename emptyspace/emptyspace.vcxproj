@@ -114,7 +114,6 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <ClInclude Include="include\emptyspace\io\file.hpp" />
     <ClInclude Include="include\emptyspace\graphics\light.hpp" />
     <ClInclude Include="include\emptyspace\math\frustum.hpp" />
-    <ClInclude Include="include\emptyspace\noncopyable.hpp" />
     <ClInclude Include="include\emptyspace\physics.hpp" />
     <ClInclude Include="include\emptyspace\graphics\program.hpp" />
     <ClInclude Include="include\emptyspace\graphics\textures.hpp" />

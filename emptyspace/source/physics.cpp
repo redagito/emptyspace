@@ -1,9 +1,8 @@
 #include <emptyspace/physics.hpp>
 
-#include <vector>
-#include <iostream>
-
 #include <glm/glm.hpp>
+
+#include <iostream>
 
 using namespace physx;
 
@@ -12,8 +11,7 @@ PhysicsScene::PhysicsScene()
     std::clog << "PHYSX: Initialising.\n";
 
     _foundation = PxCreateFoundation(PX_PHYSICS_VERSION, _allocator, _errorCallback);
-    _physics = PxCreatePhysics(PX_PHYSICS_VERSION, *_foundation,
-                               PxTolerancesScale(), true, nullptr);
+    _physics = PxCreatePhysics(PX_PHYSICS_VERSION, *_foundation, PxTolerancesScale(), true, nullptr);
 
     PxSceneDesc sceneDesc(_physics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.0f, 0.0f, 0.0f);

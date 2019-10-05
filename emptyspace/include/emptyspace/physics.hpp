@@ -1,7 +1,9 @@
 #pragma once
 
-#include "PxPhysicsAPI.h"
-#include "types.hpp"
+#include <emptyspace/types.hpp>
+
+#include <PxPhysicsAPI.h>
+
 
 #define PX_RELEASE(x) if(x) { x->release(); x = nullptr; }
 
@@ -26,7 +28,7 @@ public:
 
     void Step(physx::PxReal deltaTime) const;
     void Boost(Direction direction, f32 acceleration);
-    void Tumble(const float x, const float y);
+    void Tumble(const f32 x, const f32 y);
 
     physx::PxD6Joint*           Booster;
     physx::PxRigidDynamic*      Camera;
@@ -45,7 +47,7 @@ private:
     physx::PxDefaultCpuDispatcher* _dispatcher = nullptr;
     physx::PxScene*                _scene      = nullptr;
 
-    physx::PxMaterial*             _material   = nullptr;
+	physx::PxMaterial*             _material   = nullptr;
 
-    physx::PxPvd*                  _pvd        = nullptr;
+	physx::PxPvd*                  _visualDebugger = nullptr;
 };

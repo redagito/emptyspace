@@ -1,12 +1,11 @@
 #pragma once
 #include <emptyspace/types.hpp>
-#include <emptyspace/noncopyable.hpp>
 
 #include <glad/glad.h>
 
 #include <vector>
 
-class Buffer final : NonCopyable
+class Buffer final
 {
 public:
 	Buffer()

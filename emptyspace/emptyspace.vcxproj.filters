@@ -21,7 +21,6 @@
     <ClInclude Include="include\emptyspace\graphics\graphicsdevice.hpp" />
     <ClInclude Include="include\emptyspace\scenes\planetscene.hpp" />
     <ClInclude Include="include\emptyspace\entities\entity.hpp" />
-    <ClInclude Include="include\emptyspace\noncopyable.hpp" />
     <ClInclude Include="include\emptyspace\graphics\buffer.hpp" />
   </ItemGroup>
   <ItemGroup>

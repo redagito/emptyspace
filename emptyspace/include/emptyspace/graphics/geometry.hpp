@@ -1,6 +1,5 @@
 #pragma once
 #include <emptyspace/types.hpp>
-#include <emptyspace/noncopyable.hpp>
 #include <emptyspace/graphics/buffer.hpp>
 
 #include <glad/glad.h>
@@ -339,8 +338,8 @@ private:
 		}
 	}
 
-	u32 _vertexCount;
-	u32 _indexCount;
+	u32 _vertexCount{};
+	u32 _indexCount{};
 	
 	u32 _vao{};
 	Buffer* _vbo{};
