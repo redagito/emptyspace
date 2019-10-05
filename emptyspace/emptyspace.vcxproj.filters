@@ -33,6 +33,8 @@
     <None Include="res\shaders\gbuffer.vert.glsl" />
     <None Include="res\shaders\main.frag.glsl" />
     <None Include="res\shaders\main.vert.glsl" />
+    <None Include="res\shaders\quad.vert.glsl" />
+    <None Include="res\shaders\quad.frag.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\textures\TC_SkyRed_Xn.png" />

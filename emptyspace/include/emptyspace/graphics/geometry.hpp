@@ -324,8 +324,8 @@ private:
 
 		glCreateVertexArrays(1, &_vao);
 #ifdef _DEBUG
-		const auto label = typeid(T).name();
-		glObjectLabel(GL_BUFFER, _vao, strlen(label), label);
+		//const auto label = typeid(T).name();
+		//glObjectLabel(GL_BUFFER, _vao, strlen(label), label);
 #endif
 		glVertexArrayVertexBuffer(_vao, 0, _vbo->GetName(), 0, sizeof(T));
 		glVertexArrayElementBuffer(_vao, _ibo->GetName());

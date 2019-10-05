@@ -19,8 +19,8 @@ u32 CreateShaderStorageBuffer(T* data, const u32 size)
     u32 name;
 	glCreateBuffers(1, &name);
 #if _DEBUG
-	const auto label = typeid(T).name();
-	glObjectLabel(GL_BUFFER, name, strlen(label), label);
+	//const auto label = typeid(T).name();
+	//glObjectLabel(GL_BUFFER, name, strlen(label), label);
 #endif
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, name);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * size, data, GL_STATIC_DRAW);
@@ -47,8 +47,8 @@ public:
     	_vertexShader = glCreateShaderProgramv(GL_VERTEX_SHADER, 1, &vertexShaderData);
 		_fragmentShader = glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, &fragmentShaderData);
 #ifdef _DEBUG
-		glObjectLabel(GL_PROGRAM, _vertexShader, vertexShaderFilePath.length(), vertexShaderFilePath.data());
-		glObjectLabel(GL_PROGRAM, _fragmentShader, fragmentShaderFilePath.length(), fragmentShaderFilePath.data());
+		//glObjectLabel(GL_PROGRAM, _vertexShader, vertexShaderFilePath.length(), vertexShaderFilePath.data());
+		//glObjectLabel(GL_PROGRAM, _fragmentShader, fragmentShaderFilePath.length(), fragmentShaderFilePath.data());
 #endif
 		ValidateProgram(_vertexShader, vertexShaderFilePath);
 		ValidateProgram(_fragmentShader, fragmentShaderFilePath);

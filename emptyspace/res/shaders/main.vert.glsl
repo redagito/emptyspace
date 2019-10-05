@@ -21,13 +21,15 @@ vec3 skyray(vec2 texcoord, float fovy, float aspect)
 
 void main()
 {
-	vec2 vertices[] = {
+	vec2 vertices[] = 
+	{
 		vec2(-1.0f, 1.0f),
 		vec2(1.0f, 1.0f),
 		vec2(1.0f,-1.0f),
 		vec2(-1.0f,-1.0f)
 	};
-	vec2 uvs[] = {
+	vec2 uvs[] = 
+	{
 		vec2(0.0f, 1.0f),
 		vec2(1.0f, 1.0f),
 		vec2(1.0f, 0.0f),

@@ -133,6 +133,8 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <None Include="res\shaders\main.vert.glsl" />
     <None Include="res\shaders\light.frag.glsl" />
     <None Include="res\shaders\light.vert.glsl" />
+    <None Include="res\shaders\quad.frag.glsl" />
+    <None Include="res\shaders\quad.vert.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\textures\TC_SkyRed_Xn.png" />

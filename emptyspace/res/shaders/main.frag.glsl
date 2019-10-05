@@ -1,15 +1,15 @@
 #version 450
 
-layout (location = 0) out vec4 fs_color;
+layout(location = 0) out vec4 fs_color;
 
-layout (binding = 0) uniform sampler2D t_position;
-layout (binding = 1) uniform sampler2D t_normal;
-layout (binding = 2) uniform sampler2D t_albedo;
-layout (binding = 3) uniform sampler2D t_depth;
-layout (binding = 4) uniform samplerCube tc_skybox;
-layout (binding = 5) uniform sampler2D t_lights;
+layout(binding = 0) uniform sampler2D t_position;
+layout(binding = 1) uniform sampler2D t_normal;
+layout(binding = 2) uniform sampler2D t_albedo;
+layout(binding = 3) uniform sampler2D t_depth;
+layout(binding = 4) uniform samplerCube tc_skybox;
+layout(binding = 5) uniform sampler2D t_lights;
 
-layout (location = 0) uniform vec3 u_camera_position;
+layout(location = 0) uniform float u_blend_factor;
 
 in in_block
 {
