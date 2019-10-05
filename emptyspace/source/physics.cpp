@@ -1,13 +1,15 @@
+#include <emptyspace/physics.hpp>
+
 #include <vector>
 #include <iostream>
-#include <emptyspace/physics.hpp>
+
 #include <glm/glm.hpp>
 
 using namespace physx;
 
 PhysicsScene::PhysicsScene()
 {
-    std::clog << "Initialising PhysX..\n";
+    std::clog << "PHYSX: Initialising.\n";
 
     _foundation = PxCreateFoundation(PX_PHYSICS_VERSION, _allocator, _errorCallback);
     _physics = PxCreatePhysics(PX_PHYSICS_VERSION, *_foundation,
@@ -79,21 +81,19 @@ PhysicsScene::~PhysicsScene()
     PX_RELEASE(_foundation);
 }
 
-void PhysicsScene::Step(PxReal deltaTime)
+void PhysicsScene::Step(PxReal deltaTime) const
 {
    _scene->simulate(deltaTime);
    _scene->fetchResults(true);
 }
 
-void PhysicsScene::Boost(Direction direction)
+void PhysicsScene::Boost(Direction direction, f32 acceleration)
 {
-    auto acceleration = 0.05f;
-    
     // Move relative facing direction
-    auto quat = Camera->getGlobalPose().q;
-    auto xaxis = quat.getBasisVector0();
-    auto yaxis = quat.getBasisVector1();
-    auto zaxis = quat.getBasisVector2();
+    const auto quat = Camera->getGlobalPose().q;
+    const auto xaxis = quat.getBasisVector0();
+    const auto yaxis = quat.getBasisVector1();
+    const auto zaxis = quat.getBasisVector2();
 
     if (direction == Direction::Forward)
     {

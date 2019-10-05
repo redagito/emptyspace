@@ -1,8 +1,9 @@
 #pragma once
 
 #include "PxPhysicsAPI.h"
+#include "types.hpp"
 
-#define PX_RELEASE(x)   if(x)   { x->release(); x = NULL; }
+#define PX_RELEASE(x) if(x) { x->release(); x = nullptr; }
 
 enum class Direction
 {
@@ -23,8 +24,8 @@ public:
     PhysicsScene();
     ~PhysicsScene();
 
-    void Step(physx::PxReal deltaTime);
-    void Boost(Direction direction);
+    void Step(physx::PxReal deltaTime) const;
+    void Boost(Direction direction, f32 acceleration);
     void Tumble(const float x, const float y);
 
     physx::PxD6Joint*           Booster;

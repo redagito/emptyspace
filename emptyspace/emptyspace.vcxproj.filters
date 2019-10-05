@@ -8,24 +8,32 @@
   <ItemGroup>
     <ClInclude Include="include\emptyspace\types.hpp" />
     <ClInclude Include="include\emptyspace\physics.hpp" />
-    <ClInclude Include="include\emptyspace\textures.hpp" />
-    <ClInclude Include="include\emptyspace\io.hpp" />
-    <ClInclude Include="include\emptyspace\geometry.hpp" />
-    <ClInclude Include="include\emptyspace\program.hpp" />
-    <ClInclude Include="include\emptyspace\format.hpp" />
-    <ClInclude Include="include\emptyspace\light.hpp" />
-    <ClInclude Include="include\emptyspace\filewatcher.hpp" />
+    <ClInclude Include="include\emptyspace\math\frustum.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\program.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\textures.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\light.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\geometry.hpp" />
+    <ClInclude Include="include\emptyspace\io\filewatcher.hpp" />
+    <ClInclude Include="include\emptyspace\io\file.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\format.hpp" />
+    <ClInclude Include="include\emptyspace\scenes\scene.hpp" />
+    <ClInclude Include="include\emptyspace\scenes\spacescene.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\graphicsdevice.hpp" />
+    <ClInclude Include="include\emptyspace\scenes\planetscene.hpp" />
+    <ClInclude Include="include\emptyspace\entities\entity.hpp" />
+    <ClInclude Include="include\emptyspace\noncopyable.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\buffer.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\shaders\blur.fs.glsl" />
-    <None Include="res\shaders\blur.vs.glsl" />
-    <None Include="res\shaders\gbuffer.fs.glsl" />
-    <None Include="res\shaders\gbuffer.vs.glsl" />
-    <None Include="res\shaders\main.fs.glsl" />
-    <None Include="res\shaders\main.vs.glsl" />
     <None Include="..\README.md" />
-    <None Include="res\shaders\pointlight.vert.glsl" />
-    <None Include="res\shaders\pointlight.frag.glsl" />
+    <None Include="res\shaders\light.vert.glsl" />
+    <None Include="res\shaders\light.frag.glsl" />
+    <None Include="res\shaders\blur.frag.glsl" />
+    <None Include="res\shaders\blur.vert.glsl" />
+    <None Include="res\shaders\gbuffer.frag.glsl" />
+    <None Include="res\shaders\gbuffer.vert.glsl" />
+    <None Include="res\shaders\main.frag.glsl" />
+    <None Include="res\shaders\main.vert.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\textures\TC_SkyRed_Xn.png" />

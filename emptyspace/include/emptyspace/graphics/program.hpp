@@ -1,6 +1,6 @@
 #pragma once
 #include <emptyspace/types.hpp>
-#include <emptyspace/io.hpp>
+#include <emptyspace/io/file.hpp>
 
 #include <glad/glad.h>
 #include <glm/mat4x4.hpp>

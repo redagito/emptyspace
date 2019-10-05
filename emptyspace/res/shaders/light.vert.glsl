@@ -16,7 +16,5 @@ out out_block
 void main()
 {
 	const vec4 mpos = (u_projection * u_view * u_model * vec4(in_position, 1.0));
-	//const vec3 position = (mpos * vec4(in_position, 1.0)).xyz;
-
 	gl_Position = mpos;
 }
