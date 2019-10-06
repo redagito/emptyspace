@@ -67,10 +67,10 @@ Scene* g_Scene_Current{ nullptr };
 Frustum g_Frustum;
 
 bool g_Enable_MotionBlur{ false };
-bool g_Enable_VSync{ true };
+bool g_Enable_VSync{ false };
 
 bool g_Enable_TransitionEffect{ false };
-float g_Transition_Factor{ 0.0f };
+glm::vec4 g_Transition_Factor{ 0.0f, 0.0f, 0.0f, 0.0f };
 
 inline glm::vec3 OrbitAxis(const f32 angle, const glm::vec3& axis, const glm::vec3& spread)
 {
@@ -85,6 +85,11 @@ inline float Lerp(const f32 a, const f32 b, const f32 f)
 #if _DEBUG
 void APIENTRY DebugCallback(const u32 source, const u32 type, const u32 id, const u32 severity, s32 length, const GLchar* message, const void* userParam)
 {
+	if (id == 131185)
+	{
+		return;
+	}
+	
 	std::ostringstream str;
 	str << "---------------------GL CALLBACK---------------------\n";
 	str << "Message: " << message << '\n';
@@ -154,7 +159,7 @@ void APIENTRY DebugCallback(const u32 source, const u32 type, const u32 id, cons
 	switch (severity)
 	{
 	    case GL_DEBUG_SEVERITY_NOTIFICATION:
-		    str << "NOTIFICATION";
+		    //str << "NOTIFICATION";
 			break;
 		case GL_DEBUG_SEVERITY_LOW:
 		    str << "LOW";
@@ -369,11 +374,11 @@ void Update(const float deltaTime)
 
 	if (g_Enable_TransitionEffect)
 	{
-		g_Transition_Factor += 0.007f;
-		if (g_Transition_Factor >= 1.0f)
+		g_Transition_Factor.w += 0.01f;
+		if (g_Transition_Factor.w >= 1.0f)
 		{
 			g_Enable_TransitionEffect = false;
-			g_Transition_Factor = 0.0f;
+			g_Transition_Factor.w = 0.0f;
 		}
 	}
 
@@ -857,21 +862,26 @@ int main(int argc, char* argv[])
 		              texture_gbuffer_depth, texture_lbuffer_lights, screenWidth, screenHeight, fieldOfView);
 		/* resolve gbuffer ======================================================================= end */
 
-		if (g_Enable_TransitionEffect)
+		//if (g_Enable_TransitionEffect)
 		{
 			/* ============== TRANSITION EFFECT =================== */
-			graphicsDevice->ClearFramebuffer(g_Framebuffer_Transition, glm::vec3(0.0f));
-			
+			graphicsDevice->ClearFramebuffer(g_Framebuffer_Transition, glm::vec3(0.0f), false);
+			//glClearNamedFramebufferfv(g_Framebuffer_Transition, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
 			glBindFramebuffer(GL_FRAMEBUFFER, g_Framebuffer_Transition);
 
 			glBindTextureUnit(0, texture_gbuffer_final);
 
 			g_Program_Quad->Use();
 			g_Program_Quad->SetFragmentShaderUniform(0, g_Transition_Factor);
-
+			
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_CULL_FACE);
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-			glDrawArraysInstancedBaseInstance(GL_TRIANGLES, 0, 6, 1, 0);
+
+			glDrawArraysInstancedBaseInstance(GL_TRIANGLES, 0, 3, 1, 0);
+			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_CULL_FACE);
 			glDisable(GL_BLEND);
 		}
 		/* ============== TRANSITION EFFECT =================== */
@@ -904,6 +914,7 @@ int main(int argc, char* argv[])
 			    ? g_Framebuffer_Transition
 			    : g_Framebuffer_Final, 0, 0, 0, screenWidth, screenHeight, 0, 0, g_Window_Width, g_Window_Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
+		glFinish();
 		glfwSwapBuffers(g_Window);
 	}
 
