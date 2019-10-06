@@ -13,8 +13,8 @@ in in_block
 
 void main()
 {
-	vec3 redColor = vec3(0.0f, 0.0f, 0.0f);
+	vec3 targetColor = vec3(0.0f, 0.0f, 1.0f);
 	vec3 finalColor = texture(t_final, i.uv).rgb;
 
-	fs_color = vec4(mix(finalColor, redColor, u_blend_factor), 1.0f);
+	fs_color = vec4(mix(finalColor, targetColor, u_blend_factor), 1.0f);
 }

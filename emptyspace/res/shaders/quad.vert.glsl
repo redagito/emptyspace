@@ -2,39 +2,34 @@
 
 out gl_PerVertex{ vec4 gl_Position; };
 
-out out_block
-{
-	vec2 uv;
-} o;
+out vec2 uv;
 
 void main()
 {
-	//const uint id = gl_VertexID;
+	//vec2 vertices[] =
+	//{
+	//	vec2(-1.0f, 1.0f),
+	//	vec2(1.0f, 1.0f),
+	//	vec2(1.0f,-1.0f),
+	//	vec2(-1.0f,-1.0f)
+	//};
 
-	//o.uv = vec2((id << 1) & 2, id & 2);
-	//gl_Position = vec4(o.uv * vec2(2, -2) + vec2(-1, 1), 0, 1);
+	//vec2 uvs[] =
+	//{
+	//	vec2(0.0f, 1.0f),
+	//	vec2(1.0f, 1.0f),
+	//	vec2(1.0f, 0.0f),
+	//	vec2(0.0f, 0.0f)
 
-	vec2 vertices[] =
-	{
-		vec2(-1.0f, 1.0f),
-		vec2(1.0f, 1.0f),
-		vec2(1.0f,-1.0f),
-		vec2(-1.0f,-1.0f)
-	};
+	//};
+	//uint indices[] = { 0, 3, 2, 2, 1, 0 };
 
-	vec2 uvs[] =
-	{
-		vec2(0.0f, 1.0f),
-		vec2(1.0f, 1.0f),
-		vec2(1.0f, 0.0f),
-		vec2(0.0f, 0.0f)
+	//const vec2 position = vertices[indices[gl_VertexID]];
+	//const vec2 texcoord = uvs[indices[gl_VertexID]];
 
-	};
-	uint indices[] = { 0, 3, 2, 2, 1, 0 };
+	//o.uv = uv;
+	//gl_Position = vec4(position, 0.0, 1.0);
 
-	const vec2 position = vertices[indices[gl_VertexID]];
-	const vec2 uv = uvs[indices[gl_VertexID]];
-
-	o.uv = uv;
-	gl_Position = vec4(position, 0.0, 1.0);
+	gl_Position = vec4(float(gl_VertexID / 2) * 4.0 - 1.0, float(gl_VertexID % 2) * 4.0 - 1.0, 0.0, 1.0);
+	uv = vec2(float(gl_VertexID / 2) * 2.0, 1.0 - float(gl_VertexID % 2) * 2.0);
 }

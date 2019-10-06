@@ -109,6 +109,7 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <ClInclude Include="include\emptyspace\entities\entity.hpp" />
     <ClInclude Include="include\emptyspace\graphics\buffer.hpp" />
     <ClInclude Include="include\emptyspace\graphics\graphicsdevice.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\material.hpp" />
     <ClInclude Include="include\emptyspace\io\filewatcher.hpp" />
     <ClInclude Include="include\emptyspace\graphics\geometry.hpp" />
     <ClInclude Include="include\emptyspace\io\file.hpp" />
@@ -119,6 +120,7 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <ClInclude Include="include\emptyspace\graphics\textures.hpp" />
     <ClInclude Include="include\emptyspace\scenes\planetscene.hpp" />
     <ClInclude Include="include\emptyspace\scenes\scene.hpp" />
+    <ClInclude Include="include\emptyspace\scenes\scenenode.hpp" />
     <ClInclude Include="include\emptyspace\scenes\spacescene.hpp" />
     <ClInclude Include="include\emptyspace\types.hpp" />
     <ClInclude Include="include\emptyspace\graphics\format.hpp" />

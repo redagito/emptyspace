@@ -2,6 +2,10 @@
 
 #include <emptyspace/types.hpp>
 
+struct Light;
+class Material;
+struct SceneObject;
+
 class Scene
 {
 public:
@@ -15,6 +19,8 @@ public:
 
 	}
 
+	virtual void Cleanup() = 0;
+
 	inline void Draw(f32 deltaTime)
 	{
 		InternalDraw(deltaTime);
@@ -26,6 +32,12 @@ public:
 	{
 		InternalUpdate(deltaTime);
 	}
+
+	std::vector<SceneObject*>& Objects()
+	{
+		return _objects;
+	}
+
 protected:
 	virtual void InternalDraw(f32 deltaTime)
 	{
@@ -34,4 +46,9 @@ protected:
 	virtual void InternalUpdate(f32 deltaTime) 
 	{
 	}
+
+private:
+	std::vector<Light*> _lights;
+	std::vector<Material*> _materials;
+	std::vector<SceneObject*> _objects;
 };

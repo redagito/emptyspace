@@ -22,6 +22,8 @@
     <ClInclude Include="include\emptyspace\scenes\planetscene.hpp" />
     <ClInclude Include="include\emptyspace\entities\entity.hpp" />
     <ClInclude Include="include\emptyspace\graphics\buffer.hpp" />
+    <ClInclude Include="include\emptyspace\scenes\scenenode.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\material.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
