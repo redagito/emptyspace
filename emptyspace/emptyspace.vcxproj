@@ -125,8 +125,8 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
-    <None Include="res\shaders\blur.frag.glsl" />
-    <None Include="res\shaders\blur.vert.glsl" />
+    <None Include="res\shaders\motionblur.frag.glsl" />
+    <None Include="res\shaders\motionblur.vert.glsl" />
     <None Include="res\shaders\gbuffer.frag.glsl" />
     <None Include="res\shaders\gbuffer.vert.glsl" />
     <None Include="res\shaders\main.frag.glsl" />

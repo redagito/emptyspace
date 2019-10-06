@@ -27,14 +27,14 @@
     <None Include="..\README.md" />
     <None Include="res\shaders\light.vert.glsl" />
     <None Include="res\shaders\light.frag.glsl" />
-    <None Include="res\shaders\blur.frag.glsl" />
-    <None Include="res\shaders\blur.vert.glsl" />
     <None Include="res\shaders\gbuffer.frag.glsl" />
     <None Include="res\shaders\gbuffer.vert.glsl" />
     <None Include="res\shaders\main.frag.glsl" />
     <None Include="res\shaders\main.vert.glsl" />
     <None Include="res\shaders\quad.vert.glsl" />
     <None Include="res\shaders\quad.frag.glsl" />
+    <None Include="res\shaders\motionblur.frag.glsl" />
+    <None Include="res\shaders\motionblur.vert.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\textures\TC_SkyRed_Xn.png" />

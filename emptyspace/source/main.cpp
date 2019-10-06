@@ -607,7 +607,7 @@ int main(int argc, char* argv[])
 	/* shaders */
 	g_Program_Final = new Program("../../emptyspace/res/shaders/main.vert.glsl", "../../emptyspace/res/shaders/main.frag.glsl");
 	g_Program_GBuffer = new Program("../../emptyspace/res/shaders/gbuffer.vert.glsl", "../../emptyspace/res/shaders/gbuffer.frag.glsl");
-	g_Program_MotionBlur = new Program("../../emptyspace/res/shaders/blur.vert.glsl", "../../emptyspace/res/shaders/blur.frag.glsl");
+	g_Program_MotionBlur = new Program("../../emptyspace/res/shaders/motionblur.vert.glsl", "../../emptyspace/res/shaders/motionblur.frag.glsl");
 	g_Program_Light = new Program("../../emptyspace/res/shaders/light.vert.glsl", "../../emptyspace/res/shaders/light.frag.glsl");
 	g_Program_Quad = new Program("../../emptyspace/res/shaders/quad.vert.glsl", "../../emptyspace/res/shaders/quad.frag.glsl");
 
@@ -679,7 +679,7 @@ int main(int argc, char* argv[])
 
 			char str[128];
 			sprintf_s(str, "emptyspace, frame = %.3fms +/- %.4fms, fps = %.1f, %d frames, %d visible lights, %.3f", deltaTimeAverage * 1000.0f,
-			          1000.0f * deltaTimeStandardError, 1.0f / deltaTimeAverage, framesToAverage, visibleLights, g_Blend_Factor);
+				1000.0f * deltaTimeStandardError, 1.0f / deltaTimeAverage, framesToAverage, visibleLights, g_Blend_Factor);
 			glfwSetWindowTitle(g_Window, str);
 
 			framesToAverage = static_cast<int>(1.0f / deltaTimeAverage);
@@ -698,8 +698,8 @@ int main(int argc, char* argv[])
 
 		/* Cube orbit */
 		static auto cubeSpeed = 0.125f;
-		auto const orbitCenter = glm::vec3(0.0f, 0.0f, 0.0f);
 		static auto orbitProgression = 0.0f;
+		auto const orbitCenter = glm::vec3(0.0f, 0.0f, 0.0f);
 
 		glm::quat q = glm::rotate(glm::mat4(1.0f), cameraDirection.y, glm::vec3(0.0f, 1.0f, 0.0f));
 
