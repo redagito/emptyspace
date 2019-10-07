@@ -1,8 +1,9 @@
 #pragma once
 
 #include <emptyspace/types.hpp>
+#include <emptyspace/camera.hpp>
+#include <emptyspace/graphics/light.hpp>
 
-struct Light;
 class Material;
 struct SceneObject;
 
@@ -11,7 +12,7 @@ class Scene
 public:
 	Scene()
 	{
-
+		RootNode = new SceneNode(nullptr);
 	}
 
 	virtual ~Scene()
@@ -28,11 +29,16 @@ public:
 
 	virtual void Initialize() = 0;
 
-	inline void Update(f32 deltaTime)
+	inline void Update(f32 deltaTime, const Camera& camera)
 	{
-		InternalUpdate(deltaTime);
+		InternalUpdate(deltaTime, camera);
 	}
 
+	std::vector<Light>& Lights()
+	{
+		return _lights;
+	}
+	
 	std::vector<SceneObject*>& Objects()
 	{
 		return _objects;
@@ -43,12 +49,15 @@ protected:
 	{
 	}
 
-	virtual void InternalUpdate(f32 deltaTime) 
+	virtual void InternalUpdate(f32 deltaTime, const Camera& camera)
 	{
 	}
 
-private:
-	std::vector<Light*> _lights;
+	std::vector<Light> _lights;
 	std::vector<Material*> _materials;
 	std::vector<SceneObject*> _objects;
+
+	SceneNode* RootNode;
+private:
+
 };

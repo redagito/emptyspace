@@ -26,6 +26,7 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include "emptyspace/camera.hpp"
 
 static f64 g_MousePosXOld = {};
 static f64 g_MousePosYOld = {};
@@ -52,13 +53,12 @@ Geometry* g_Geometry_Plane{ nullptr };
 Geometry* g_Geometry_Ship{ nullptr };
 Geometry* g_Geometry_PointLight{ nullptr };
 
-Buffer* g_Buffer_Asteroids{ nullptr };
-
 u32 g_Framebuffer_Geometry{ };
 u32 g_Framebuffer_Final{ };
 u32 g_Framebuffer_Motionblur{ };
 u32 g_Framebuffer_Lights{ };
 u32 g_Framebuffer_Transition{ };
+u32 g_Texture_Skybox{ };
 
 std::vector<Material*> g_Materials;
 std::vector<Scene*> g_Scenes;
@@ -72,10 +72,7 @@ bool g_Enable_VSync{ false };
 bool g_Enable_TransitionEffect{ false };
 glm::vec4 g_Transition_Factor{ 0.0f, 0.0f, 0.0f, 0.0f };
 
-inline glm::vec3 OrbitAxis(const f32 angle, const glm::vec3& axis, const glm::vec3& spread)
-{
-	return glm::angleAxis(angle, axis) * spread;
-}
+
 
 inline float Lerp(const f32 a, const f32 b, const f32 f)
 {
@@ -201,94 +198,7 @@ void Cleanup()
 	glDeleteFramebuffers(1, &g_Framebuffer_Lights);
 	glDeleteFramebuffers(1, &g_Framebuffer_Transition);
 
-	delete g_Buffer_Asteroids;
 	delete g_PhysicsScene;
-}
-
-// shamelessly stolen from the learnopengl tutorial
-std::vector<glm::mat4> CreateAsteroidInstances(const u32 instanceCount)
-{
-	std::vector<glm::mat4> modelMatrices;
-
-	srand(static_cast<int>(glfwGetTime()));
-	const auto radius = 200.0f;
-	const auto offset = 100.5f;
-	for (u32 i = 0; i < instanceCount; i++)
-	{
-		auto model = glm::mat4(1.0f);
-		// 1. translation: displace along circle with 'radius' in range [-offset, offset]
-		const auto angle = static_cast<float>(i) / static_cast<float>(instanceCount) * 360.0f;
-		auto displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
-
-		const auto x = sin(angle) * radius + displacement;
-		displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
-
-		const auto y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
-		displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
-
-		const auto z = cos(angle) * radius + displacement;
-		model = glm::translate(model, glm::vec3(x, y, z));
-
-		// 2. scale: Scale between 0.05 and 0.25f
-		const auto scale = rand() % 60 / 100.0f + 2.05f;
-		model = glm::scale(model, glm::vec3(scale));
-
-		// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
-		const auto rotAngle = f32(rand() % 360);
-		model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
-
-		// 4. now add to list of matrices
-		modelMatrices.push_back(model);
-	}
-
-	return modelMatrices;
-}
-
-std::vector<Light> CreateRandomLights(const u32 instanceCount)
-{
-	std::vector<Light> lights;
-
-	srand(static_cast<int>(glfwGetTime()));
-	const auto radius = 200.0f;
-	const auto offset = 100.5f;
-	for (u32 i = 0; i < instanceCount; i++)
-	{
-		auto model = glm::mat4(1.0f);
-		// 1. translation: displace along circle with 'radius' in range [-offset, offset]
-		const auto angle = static_cast<float>(i) / static_cast<float>(instanceCount) * 360.0f;
-		auto displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
-
-		const auto x = sin(angle) * radius + displacement;
-		displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
-
-		const auto y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
-		displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
-
-		const auto z = cos(angle) * radius + displacement;
-		const auto position = glm::vec3(x, y, z);
-
-		const auto color = glm::vec3((rand() % 256) / 256.0f, (rand() % 256) / 256.0f, (rand() % 256) / 256.0f);
-
-		// 2. scale: Scale between 0.05 and 0.25f
-		const auto scale = rand() % 60;// / 100.0f + 2.05f;
-		const auto attenuation = glm::vec3(scale);
-
-		// 4. now add to list of matrices
-		lights.emplace_back(0, position, color, glm::vec3(0.032f, 0.09f, attenuation.r));
-	}
-
-	return lights;
-}
-
-std::vector<Light> CreateLights()
-{
-	std::vector<Light> lights;
-	lights.emplace_back(0, glm::vec3(-80, 1, +80), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.032f, 0.09f, 60.0f));
-	lights.emplace_back(0, glm::vec3(-80, 1, -80), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.032f, 0.09f, 60.0f));
-	lights.emplace_back(0, glm::vec3(+80, 1, -80), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.032f, 0.09f, 60.0f));
-	lights.emplace_back(0, glm::vec3(+80, 1, +80), glm::vec3(1.2f, 0.3f, 1.1f), glm::vec3(0.032f, 0.09f, 60.0f));
-
-	return lights;
 }
 
 void HandleInput(const f32 deltaTime)
@@ -485,7 +395,6 @@ void InitializePhysics()
 void RenderLights(const u32 gbufferPosition, 
 	const u32 gbufferNormal, 
 	const u32 gbufferDepth, 
-	std::vector<Light>& lights, 
 	glm::mat4 const cameraProjection, 
 	const glm::vec3 cameraPosition, 
 	const glm::vec3 cameraDirection, 
@@ -511,6 +420,8 @@ void RenderLights(const u32 gbufferPosition,
 
 	auto lightIndex = 0;
 	visibleLights = 0;
+
+	auto lights = g_Scene_Current->Lights();
 	for (auto& light : lights)
 	{
 		if (light.Type == 1)
@@ -618,22 +529,8 @@ int main(int argc, char* argv[])
 	const auto screenHeight = g_Window_Height / 1;
 
 	const auto graphicsDevice = new GraphicsDevice();
-	//const auto spaceScene = new SpaceScene(*graphicsDevice);
-	//spaceScene->Initialize();
-	//delete spaceScene;
+	g_Scene_Current = new SpaceScene(*graphicsDevice);
 
-	auto const texture_cube_diffuse = CreateTexture2DFromfile("./res/textures/T_Default_D.png", STBI_rgb);
-	auto const texture_cube_specular = CreateTexture2DFromfile("./res/textures/T_Default_S.png", STBI_grey);
-	auto const texture_cube_normal = CreateTexture2DFromfile("./res/textures/T_Default_N.png", STBI_rgb);
-	auto const texture_skybox = CreateTextureCubeFromFiles({
-		"./res/textures/TC_SkySpace_Xn.png",
-		"./res/textures/TC_SkySpace_Xp.png",
-		"./res/textures/TC_SkySpace_Yn.png",
-		"./res/textures/TC_SkySpace_Yp.png",
-		"./res/textures/TC_SkySpace_Zn.png",
-		"./res/textures/TC_SkySpace_Zp.png"
-	});
-	   
 	/* framebuffer textures */
 	auto const texture_gbuffer_final = CreateTexture2D(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
 	
@@ -652,19 +549,21 @@ int main(int argc, char* argv[])
 	g_Framebuffer_Lights = CreateFramebuffer({ texture_lbuffer_lights });
 	g_Framebuffer_Transition = CreateFramebuffer({ texture_transition });
 
+	g_Texture_Skybox = CreateTextureCubeFromFiles({
+	"./res/textures/TC_SkySpace_Xn.png",
+	"./res/textures/TC_SkySpace_Xp.png",
+	"./res/textures/TC_SkySpace_Yn.png",
+	"./res/textures/TC_SkySpace_Yp.png",
+	"./res/textures/TC_SkySpace_Zn.png",
+	"./res/textures/TC_SkySpace_Zp.png"
+		});
+
 	g_Geometry_Empty = Geometry::CreateEmpty();
 	g_Geometry_Cube = Geometry::CreateCube(1, 1, 1);
 	g_Geometry_Plane = Geometry::CreatePlane(1, 1);
 	g_Geometry_Ship = Geometry::CreateFromFile("./res/models/shipA_noWindshield.obj");
 	g_Geometry_PointLight = Geometry::CreateFromFilePlain("./res/models/PointLight.obj");
 	   	
-	auto const asteroidInstances = CreateAsteroidInstances(5000);
-
-	g_Buffer_Asteroids = new Buffer(asteroidInstances);
-
-	auto lights = CreateRandomLights(100); 
-	lights.emplace_back(1, glm::vec3(0), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0032f, 0.09f, 32.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
 	/* shaders */
 	g_Program_Final = new Program("../../emptyspace/res/shaders/main.vert.glsl", "../../emptyspace/res/shaders/main.frag.glsl");
 	g_Program_GBuffer = new Program("../../emptyspace/res/shaders/gbuffer.vert.glsl", "../../emptyspace/res/shaders/gbuffer.frag.glsl");
@@ -694,17 +593,18 @@ int main(int argc, char* argv[])
 
 	// SCENE SETUP BEGIN ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	std::vector<SceneObject> objects =
-	{
-		SceneObject(Shape::Quad),
-		SceneObject(Shape::Cube),
-	    SceneObject(Shape::Ship),
-		SceneObject(Shape::Cube),
-		SceneObject(Shape::Cube),
-		SceneObject(Shape::Cube),
-		SceneObject(Shape::Cube),
-		SceneObject(Shape::CubeInstanced),
-	};
+	//std::vector<SceneObject> objects =
+	//{
+	//	SceneObject(Shape::Quad),
+	//	SceneObject(Shape::Cube),
+	//    SceneObject(Shape::Ship),
+	//	SceneObject(Shape::Cube),
+	//	SceneObject(Shape::Cube),
+	//	SceneObject(Shape::Cube),
+	//	SceneObject(Shape::Cube),
+	//	SceneObject(Shape::CubeInstanced),
+	//};
+	g_Scene_Current->Initialize();
 
 	// SCENE SETUP END //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -725,6 +625,15 @@ int main(int argc, char* argv[])
 	glfwSetCursorPos(g_Window, g_MousePosXOld, g_MousePosYOld);
 	glfwSetInputMode(g_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+	Camera* camera = new Camera();
+
+	glEnable(GL_SCISSOR_TEST);
+
+	glViewport(0, 0, screenWidth, screenHeight);
+	glScissor(0, 0, screenWidth, screenHeight);
+
+	Material* currentMaterial = nullptr;
+	
 	while (!glfwWindowShouldClose(g_Window))
 	{
 		const auto t2 = glfwGetTime();
@@ -755,40 +664,19 @@ int main(int argc, char* argv[])
 		}
 
 		Update(deltaTime);
+		
 		const auto cameraPositionRaw = g_PhysicsScene->Camera->getGlobalPose().p;
 		const auto cameraOrientation = g_PhysicsScene->Camera->getGlobalPose().q;
 		const auto cameraDirectionRaw = cameraOrientation.getBasisVector2();
 		const auto cameraPosition = glm::vec3(cameraPositionRaw.x, cameraPositionRaw.y, cameraPositionRaw.z);
 		const auto cameraDirection = glm::vec3(cameraDirectionRaw.x, cameraDirectionRaw.y, cameraDirectionRaw.z);
 
+		camera->Position = cameraPosition;
+		camera->Direction = cameraDirection;
+
 		///////////////////////// SCENE UPDATE BEGIN /////////////////////////
-		/* Cube orbit */
-		static auto cubeSpeed = 0.125f;
-		static auto orbitProgression = 0.0f;
-		auto const orbitCenter = glm::vec3(0.0f, 0.0f, 0.0f);
 
-		glm::quat q = glm::rotate(glm::mat4(1.0f), cameraDirection.y, glm::vec3(0.0f, 1.0f, 0.0f));
-
-		objects[0].ModelViewProjection = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 1.0f, 10.0f));
-		objects[1].ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter) * glm::rotate(glm::mat4(1.0f), orbitProgression * cubeSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
-
-		glm::quat r = glm::conjugate(glm::toQuat(glm::lookAt(cameraPosition, cameraPosition - cameraDirection, glm::vec3(0, 1, 0))));
-
-		auto shipModel = glm::translate(glm::mat4(1.0f), cameraPosition + 0.25f * cameraDirection + glm::vec3(0.25f, -0.5f, 0.0f));
-
-		auto angle = glm::atan(cameraDirection.x, cameraDirection.z);
-		glm::quat shipQuat = { 0.0f, 1 * glm::sin(angle / 2.0f), 0.0f, glm::cos(angle / 2.0f) };
-		shipModel *= glm::toMat4(r);//glm::rotate(shipModel, cameraDirection.x, glm::vec3(0.0f, 1.0f, 0.0f));
-		objects[2].ModelViewProjection = shipModel;// *glm::translate(glm::mat4(1.0f), cameraPosition + 2.0f * cameraDirection);
-
-		const auto objectCount = objects.size();
-		for (std::size_t i = 3; i < objectCount; i++)
-		{
-			auto const orbitAmount = (orbitProgression * cubeSpeed + f32(i) * 90.0f * glm::pi<f32>() / 180.0f);
-			auto const orbitPosition = OrbitAxis(orbitAmount, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(2.0f, 0.0f, 2.0f)) + glm::vec3(0.0f, 0.0f, 0.0f);
-			objects[i].ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter + orbitPosition) * glm::rotate(glm::mat4(1.0f), orbitAmount * 7.0f, glm::vec3(0.0f, -1.0f, 0.0f));
-		}
-		orbitProgression += 0.1f;
+		g_Scene_Current->Update(deltaTime, *camera);
 
 		///////////////////////// SCENE UPDATE END /////////////////////////
 
@@ -808,44 +696,52 @@ int main(int argc, char* argv[])
 
 		glBindFramebuffer(GL_FRAMEBUFFER, g_Framebuffer_Geometry);
 
-		glBindTextureUnit(0, texture_cube_diffuse);
-		glBindTextureUnit(1, texture_cube_specular);
-		glBindTextureUnit(2, texture_cube_normal);
+		//glBindTextureUnit(0, texture_cube_diffuse);
+		//glBindTextureUnit(1, texture_cube_specular);
+		//glBindTextureUnit(2, texture_cube_normal);
 
 		g_Program_GBuffer->Use();
+
+		//std::sort(g_Scene_Current->Objects().begin(), g_Scene_Current->Objects().end());
 		
 		///////////////////////// SCENE RENDER BEGIN /////////////////////////
-		//for (auto& object : g_Scene_Current->Objects())
-		for (auto& object : objects)
+		for (auto& object : g_Scene_Current->Objects())
 		{
-			switch (object.ObjectShape)
+			//if (object->ObjectMaterial != currentMaterial)
+			{
+				//currentMaterial = object->ObjectMaterial;
+				//currentMaterial->Apply();
+				object->ObjectMaterial->Apply();
+			}
+			switch (object->ObjectShape)
 			{
 			    case Shape::Cube: g_Geometry_Cube->Bind(); break;
 			    case Shape::CubeInstanced:
 				{
 					g_Geometry_Cube->Bind();
-					g_Buffer_Asteroids->BindAsStorageBuffer();
-					object.ExcludeFromMotionBlur = true;
+					//g_Buffer_Asteroids->BindAsStorageBuffer();
+					reinterpret_cast<SpaceScene*>(g_Scene_Current)->GetAsteroidInstanceBuffer()->BindAsStorageBuffer();
+					object->ExcludeFromMotionBlur = true;
 					break;
 				}
 				case Shape::Ship: g_Geometry_Ship->Bind(); break;
 			    case Shape::Quad: g_Geometry_Plane->Bind(); break;
 			}
 
-			auto const currentModelViewProjection = cameraProjection * g_Camera_View * object.ModelViewProjection;
+			auto const currentModelViewProjection = cameraProjection * g_Camera_View * object->ModelViewProjection;
 
-			g_Program_GBuffer->SetVertexShaderUniform(kUniformModel, object.ModelViewProjection);
+			g_Program_GBuffer->SetVertexShaderUniform(kUniformModel, object->ModelViewProjection);
 			g_Program_GBuffer->SetVertexShaderUniform(kUniformModelViewProjection, currentModelViewProjection);
-			g_Program_GBuffer->SetVertexShaderUniform(kUniformModelViewProjectionInverse, object.ModelViewProjectionPrevious);
-			g_Program_GBuffer->SetVertexShaderUniform(kUniformBlurExcept, object.ExcludeFromMotionBlur);
-			g_Program_GBuffer->SetVertexShaderUniform(6, object.ObjectShape == Shape::CubeInstanced);
+			g_Program_GBuffer->SetVertexShaderUniform(kUniformModelViewProjectionInverse, object->ModelViewProjectionPrevious);
+			g_Program_GBuffer->SetVertexShaderUniform(kUniformBlurExcept, object->ExcludeFromMotionBlur);
+			g_Program_GBuffer->SetVertexShaderUniform(6, object->ObjectShape == Shape::CubeInstanced);
 
-			object.ModelViewProjectionPrevious = currentModelViewProjection;
+			object->ModelViewProjectionPrevious = currentModelViewProjection;
 
-			switch (object.ObjectShape)
+			switch (object->ObjectShape)
 			{
 			    case Shape::Cube: g_Geometry_Cube->DrawElements(); break;
-			    case Shape::CubeInstanced: glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr, asteroidInstances.size()); break;
+			    case Shape::CubeInstanced: glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr, 5000); break;
 			    case Shape::Quad: g_Geometry_Plane->DrawElements(); break;
 			    case Shape::Ship: g_Geometry_Ship->DrawArrays(); break;
 			}
@@ -853,12 +749,12 @@ int main(int argc, char* argv[])
 		/* g-buffer pass ================================================================================================== end */
 		/* lights ======================================================================================================= begin */
 
-		RenderLights(texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_depth, lights, cameraProjection, cameraPosition, cameraDirection, visibleLights);
+		RenderLights(texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_depth, cameraProjection, cameraPosition, cameraDirection, visibleLights);
 
 		/* lights ================================================================================ end */
 
 		/* resolve gbuffer ===================================================================== begin */
-		RenderGBuffer(texture_skybox, texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_albedo,
+		RenderGBuffer(g_Texture_Skybox, texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_albedo,
 		              texture_gbuffer_depth, texture_lbuffer_lights, screenWidth, screenHeight, fieldOfView);
 		/* resolve gbuffer ======================================================================= end */
 
@@ -866,9 +762,8 @@ int main(int argc, char* argv[])
 		{
 			/* ============== TRANSITION EFFECT =================== */
 			graphicsDevice->ClearFramebuffer(g_Framebuffer_Transition, glm::vec3(0.0f), false);
-			//glClearNamedFramebufferfv(g_Framebuffer_Transition, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
+			
 			glBindFramebuffer(GL_FRAMEBUFFER, g_Framebuffer_Transition);
-
 			glBindTextureUnit(0, texture_gbuffer_final);
 
 			g_Program_Quad->Use();

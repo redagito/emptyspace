@@ -1,6 +1,8 @@
 #pragma once
 
 #include <glm/mat4x4.hpp>
+#include <vector>
+#include "emptyspace/types.hpp"
 
 class Material;
 
@@ -24,4 +26,32 @@ struct SceneObject
 		: ModelViewProjection{}, ModelViewProjectionPrevious{}, ObjectShape{ shape }, ObjectMaterial{ material }, ExcludeFromMotionBlur{ excludeFromMotionBlur }
 	{
 	}
+};
+
+class Component;
+
+class SceneNode
+{
+public:
+	explicit SceneNode(SceneNode* parent);
+
+	void AddChild(SceneNode* node);
+	void AddComponent(Component* component);
+
+	SceneNode* CreateChild();
+
+	void RemoveChild(SceneNode* node);
+
+	bool operator==(const SceneNode* other) const
+	{
+		return (other->_id == _id);
+	}
+
+private:
+	inline static int _nextId{ 0 };
+
+	u32 _id{};
+	SceneNode* _parent{};
+	std::vector<SceneNode*> _children{};
+	std::vector<Component*> _components{};
 };

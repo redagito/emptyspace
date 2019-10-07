@@ -31,6 +31,8 @@ void main()
 
 	fragmentColor.xyz = texture(t_lights, i.texcoord).rgb * albedo;
 
+	//vec3 n = 0.5f * normal + 0.5f;
+
 	if (depth == 1.0)
 	{
 		fs_color = texture(tc_skybox, i.ray);

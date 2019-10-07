@@ -104,9 +104,12 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <ClCompile Include="..\external\glad\src\glad.c" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\physics.cpp" />
+    <ClCompile Include="source\scenes\scenenode.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\emptyspace\camera.hpp" />
     <ClInclude Include="include\emptyspace\entities\entity.hpp" />
+    <ClInclude Include="include\emptyspace\experiment.hpp" />
     <ClInclude Include="include\emptyspace\graphics\buffer.hpp" />
     <ClInclude Include="include\emptyspace\graphics\graphicsdevice.hpp" />
     <ClInclude Include="include\emptyspace\graphics\material.hpp" />
@@ -118,6 +121,7 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <ClInclude Include="include\emptyspace\physics.hpp" />
     <ClInclude Include="include\emptyspace\graphics\program.hpp" />
     <ClInclude Include="include\emptyspace\graphics\textures.hpp" />
+    <ClInclude Include="include\emptyspace\scenes\component.hpp" />
     <ClInclude Include="include\emptyspace\scenes\planetscene.hpp" />
     <ClInclude Include="include\emptyspace\scenes\scene.hpp" />
     <ClInclude Include="include\emptyspace\scenes\scenenode.hpp" />

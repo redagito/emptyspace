@@ -15,6 +15,11 @@ public:
 
 	}
 
+	void Cleanup() override
+	{
+		
+	}
+
 	void Initialize() override
 	{
 		InitializeTextures();
@@ -26,7 +31,7 @@ protected:
 	{
 	}
 
-	void InternalUpdate(f32 deltaTime) override
+	void InternalUpdate(f32 deltaTime, const Camera& camera) override
 	{
 	}
 
