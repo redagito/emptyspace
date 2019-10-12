@@ -1,4 +1,5 @@
 #pragma once
+#define NOMINMAX
 #include <emptyspace/types.hpp>
 #include <emptyspace/graphics/buffer.hpp>
 

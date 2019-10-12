@@ -102,6 +102,10 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\external\glad\src\glad.c" />
+    <ClCompile Include="source\graphics\framebuffer.cpp" />
+    <ClCompile Include="source\graphics\graphicsdevice.cpp" />
+    <ClCompile Include="source\graphics\texturecube.cpp" />
+    <ClCompile Include="source\graphics\textures.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\physics.cpp" />
     <ClCompile Include="source\scenes\scenenode.cpp" />
@@ -111,8 +115,10 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <ClInclude Include="include\emptyspace\entities\entity.hpp" />
     <ClInclude Include="include\emptyspace\experiment.hpp" />
     <ClInclude Include="include\emptyspace\graphics\buffer.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\framebuffer.hpp" />
     <ClInclude Include="include\emptyspace\graphics\graphicsdevice.hpp" />
     <ClInclude Include="include\emptyspace\graphics\material.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\texturecube.hpp" />
     <ClInclude Include="include\emptyspace\io\filewatcher.hpp" />
     <ClInclude Include="include\emptyspace\graphics\geometry.hpp" />
     <ClInclude Include="include\emptyspace\io\file.hpp" />
@@ -131,6 +137,8 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
+    <None Include="res\shaders\emission.frag.glsl" />
+    <None Include="res\shaders\emission.vert.glsl" />
     <None Include="res\shaders\motionblur.frag.glsl" />
     <None Include="res\shaders\motionblur.vert.glsl" />
     <None Include="res\shaders\gbuffer.frag.glsl" />

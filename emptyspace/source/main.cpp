@@ -4,14 +4,17 @@
 #include <emptyspace/graphics/graphicsdevice.hpp>
 #include <emptyspace/graphics/material.hpp>
 #include <emptyspace/graphics/program.hpp>
+#include <emptyspace/graphics/texturecube.hpp>
 #include <emptyspace/graphics/textures.hpp>
 #include <emptyspace/graphics/light.hpp>
+#include <emptyspace/graphics/framebuffer.hpp>
 #include <emptyspace/io/filewatcher.hpp>
 #include <emptyspace/math/frustum.hpp>
 #include <emptyspace/physics.hpp>
 #include <emptyspace/scenes/scenenode.hpp>
 #include <emptyspace/scenes/spacescene.hpp>
 #include <emptyspace/types.hpp>
+#include <emptyspace/camera.hpp>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -25,8 +28,7 @@
 
 #include <iostream>
 #include <vector>
-#include <sstream>
-#include "emptyspace/camera.hpp"
+
 
 static f64 g_MousePosXOld = {};
 static f64 g_MousePosYOld = {};
@@ -46,6 +48,7 @@ Program* g_Program_GBuffer{ nullptr };
 Program* g_Program_MotionBlur{ nullptr };
 Program* g_Program_Light{ nullptr };
 Program* g_Program_Quad{ nullptr };
+Program* g_Program_Emission{ nullptr };
 
 Geometry* g_Geometry_Empty{ nullptr };
 Geometry* g_Geometry_Cube{ nullptr };
@@ -53,12 +56,14 @@ Geometry* g_Geometry_Plane{ nullptr };
 Geometry* g_Geometry_Ship{ nullptr };
 Geometry* g_Geometry_PointLight{ nullptr };
 
-u32 g_Framebuffer_Geometry{ };
-u32 g_Framebuffer_Final{ };
-u32 g_Framebuffer_Motionblur{ };
-u32 g_Framebuffer_Lights{ };
-u32 g_Framebuffer_Transition{ };
-u32 g_Texture_Skybox{ };
+Framebuffer* g_Framebuffer_Geometry{ };
+Framebuffer* g_Framebuffer_Emission{ };
+Framebuffer* g_Framebuffer_Final{ };
+Framebuffer* g_Framebuffer_Motionblur{ };
+Framebuffer* g_Framebuffer_Lights{ };
+Framebuffer* g_Framebuffer_Transition{ };
+
+TextureCube* g_Texture_Skybox{ };
 
 std::vector<Material*> g_Materials;
 std::vector<Scene*> g_Scenes;
@@ -66,117 +71,16 @@ Scene* g_Scene_Current{ nullptr };
 
 Frustum g_Frustum;
 
-bool g_Enable_MotionBlur{ false };
-bool g_Enable_VSync{ false };
+bool g_Enable_MotionBlur{ true };
+bool g_Enable_VSync{ true };
 
 bool g_Enable_TransitionEffect{ false };
 glm::vec4 g_Transition_Factor{ 0.0f, 0.0f, 0.0f, 0.0f };
-
-
 
 inline float Lerp(const f32 a, const f32 b, const f32 f)
 {
 	return a + f * (b - a);
 }
-
-#if _DEBUG
-void APIENTRY DebugCallback(const u32 source, const u32 type, const u32 id, const u32 severity, s32 length, const GLchar* message, const void* userParam)
-{
-	if (id == 131185)
-	{
-		return;
-	}
-	
-	std::ostringstream str;
-	str << "---------------------GL CALLBACK---------------------\n";
-	str << "Message: " << message << '\n';
-	str << "Source: ";
-	switch (source) 
-	{
-		case GL_DEBUG_SOURCE_API:
-		    str << "API";
-			break;
-		case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-		    str << "WINDOW_SYSTEM";
-			break;
-		case GL_DEBUG_SOURCE_SHADER_COMPILER:
-		    str << "SHADER_COMPILER";
-			break;
-		case GL_DEBUG_SOURCE_THIRD_PARTY:
-		    str << "THIRD_PARTY";
-			break;
-		case GL_DEBUG_SOURCE_APPLICATION:
-		    str << "APPLICATION";
-			break;
-		case GL_DEBUG_SOURCE_OTHER:
-		    str << "OTHER";
-			break;
-		default:
-			str << "UNKNOWN SOURCE";
-			break;
-	}
-	str << '\n';
-	str << "Type: ";
-	switch (type)
-	{
-		case GL_DEBUG_TYPE_ERROR:
-		    str << "ERROR";
-			break;
-		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-		    str << "DEPRECATED_BEHAVIOR";
-			break;
-		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-		    str << "UNDEFINED_BEHAVIOR";
-			break;
-		case GL_DEBUG_TYPE_PORTABILITY:
-		    str << "PORTABILITY";
-			break;
-		case GL_DEBUG_TYPE_PERFORMANCE:
-		    str << "PERFORMANCE";
-			break;
-		case GL_DEBUG_TYPE_MARKER:
-		    str << "MARKER";
-			break;
-		case GL_DEBUG_TYPE_PUSH_GROUP:
-		    str << "PUSH_GROUP";
-			break;
-		case GL_DEBUG_TYPE_POP_GROUP:
-		    str << "POP_GROUP";
-			break;
-		case GL_DEBUG_TYPE_OTHER:
-		    str << "OTHER";
-			break;
-		default:
-			str << "UNKNOWN TYPE";
-			break;
-	}
-	str << '\n';
-	str << "Id: " << id << '\n';
-	str << "Severity: ";
-	switch (severity)
-	{
-	    case GL_DEBUG_SEVERITY_NOTIFICATION:
-		    //str << "NOTIFICATION";
-			break;
-		case GL_DEBUG_SEVERITY_LOW:
-		    str << "LOW";
-			break;
-		case GL_DEBUG_SEVERITY_MEDIUM:
-		    str << "MEDIUM";
-			break;
-		case GL_DEBUG_SEVERITY_HIGH:
-		    str << "HIGH";
-			break;
-		default:
-			str << "UNKNOWN SEVERITY";
-			break;
-	}
-	str << '\n';
-	str << "---------------------GL CALLBACK---------------------\n";
-
-	std::clog << str.str();
-}
-#endif
 
 void Cleanup()
 {
@@ -185,6 +89,7 @@ void Cleanup()
 	delete g_Program_MotionBlur;
 	delete g_Program_Light;
 	delete g_Program_Quad;
+	delete g_Program_Emission;
 
 	delete g_Geometry_Cube;
 	delete g_Geometry_Plane;
@@ -192,11 +97,23 @@ void Cleanup()
 	delete g_Geometry_Ship;
 	delete g_Geometry_PointLight;
 
-	glDeleteFramebuffers(1, &g_Framebuffer_Geometry);
-	glDeleteFramebuffers(1, &g_Framebuffer_Final);
-	glDeleteFramebuffers(1, &g_Framebuffer_Motionblur);
-	glDeleteFramebuffers(1, &g_Framebuffer_Lights);
-	glDeleteFramebuffers(1, &g_Framebuffer_Transition);
+	delete g_Framebuffer_Geometry;
+	delete g_Framebuffer_Final;
+	delete g_Framebuffer_Motionblur;
+	delete g_Framebuffer_Lights;
+	delete g_Framebuffer_Transition;
+	delete g_Framebuffer_Emission;
+
+	delete g_Texture_Skybox;
+
+	for (auto material : g_Materials)
+	{
+		delete material;
+	}
+	for (auto scene : g_Scenes)
+	{
+		delete scene;
+	}
 
 	delete g_PhysicsScene;
 }
@@ -361,30 +278,6 @@ void InitializeOpenGL(GLFWwindow* window)
 		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
-
-	std::clog << "GL: VENDOR = " << glGetString(GL_VENDOR) << '\n';
-	std::clog << "GL: VERSION = " << glGetString(GL_VERSION) << '\n';
-	std::clog << "GL: GLSL VERSION = " << glGetString(GL_SHADING_LANGUAGE_VERSION) << '\n';
-
-#if _DEBUG
-	if (glDebugMessageCallback)
-	{
-		std::clog << "GL: Registered OpenGL Debug Callback.\n";
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback(DebugCallback, nullptr);
-		u32 unusedIds = 0;
-		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unusedIds, true);
-	}
-	else
-	{
-		std::cerr << "GL: glDebugMessageCallback not available.\n";
-	}
-#endif
-
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_PROGRAM_POINT_SIZE);
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void InitializePhysics()
@@ -392,23 +285,22 @@ void InitializePhysics()
 	g_PhysicsScene = new PhysicsScene();
 }
 
-void RenderLights(const u32 gbufferPosition, 
-	const u32 gbufferNormal, 
-	const u32 gbufferDepth, 
+void RenderLights(const Texture& gbufferPosition, 
+	const Texture& gbufferNormal,
+	const Texture& gbufferDepth,
 	glm::mat4 const cameraProjection, 
-	const glm::vec3 cameraPosition, 
-	const glm::vec3 cameraDirection, 
+	const glm::vec3& cameraPosition, 
+	const glm::vec3& cameraDirection, 
 	int& visibleLights)
 {
 	auto constexpr depthClearValue = 1.0f;
-	glClearNamedFramebufferfv(g_Framebuffer_Lights, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
-	glClearNamedFramebufferfv(g_Framebuffer_Lights, GL_DEPTH, 0, &depthClearValue);
+	g_Framebuffer_Lights->Clear(0, glm::value_ptr(glm::vec3(0.0f)));
+	g_Framebuffer_Lights->ClearDepth(depthClearValue);
+	g_Framebuffer_Lights->Bind();
 	
-	glBindFramebuffer(GL_FRAMEBUFFER, g_Framebuffer_Lights);
-
-	glBindTextureUnit(0, gbufferPosition);
-	glBindTextureUnit(1, gbufferNormal);
-	glBindTextureUnit(2, gbufferDepth);
+	glBindTextureUnit(0, gbufferPosition.Id());
+	glBindTextureUnit(1, gbufferNormal.Id());
+	glBindTextureUnit(2, gbufferDepth.Id());
 		
 	g_Program_Light->Use();
 	g_Geometry_PointLight->Bind();
@@ -437,12 +329,12 @@ void RenderLights(const u32 gbufferPosition,
 		//	light.Attenuation = glm::vec3(100, 100, 100);
 		//}
 		lightIndex++;
-
-
+		
 		if (!g_Frustum.SphereInFrustum(light.Position.x, light.Position.y, light.Position.z, light.Attenuation.z))
 		{
 			continue;
 		}
+		
 		visibleLights++;
 		auto model = glm::translate(glm::mat4(1.0f), glm::vec3(light.Position));
 		model = glm::scale(model, glm::vec3(light.Attenuation.z, light.Attenuation.z, light.Attenuation.z));
@@ -464,12 +356,13 @@ void RenderLights(const u32 gbufferPosition,
 	glCullFace(GL_BACK);
 }
 
-void RenderGBuffer(const u32 texture_skybox, 
-	const u32 texture_gbuffer_position,
-	const u32 texture_gbuffer_normal,
-	const u32 texture_gbuffer_albedo,
-	const u32 texture_gbuffer_depth,
-	const u32 texture_lbuffer_lights,
+void RenderGBuffer(const TextureCube& texture_skybox, 
+	const Texture& texture_gbuffer_position,
+	const Texture& texture_gbuffer_normal,
+	const Texture& texture_gbuffer_albedo,
+	const Texture& texture_gbuffer_depth,
+	const Texture& texture_lbuffer_lights,
+	const Texture& texture_emission,
 	const int screenWidth, 
 	const int screenHeight, 
 	const float fieldOfView)
@@ -479,18 +372,18 @@ void RenderGBuffer(const u32 texture_skybox,
 	auto constexpr kUniformAspectRatio = 2;
 	auto constexpr kUniformUvsDiff = 3;
 	auto constexpr depthClearValue = 1.0f;
-	
-	glClearNamedFramebufferfv(g_Framebuffer_Final, GL_COLOR, 0, glm::value_ptr(glm::vec3(1.0f)));
-	glClearNamedFramebufferfv(g_Framebuffer_Final, GL_DEPTH, 0, &depthClearValue);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, g_Framebuffer_Final);
+	g_Framebuffer_Final->Clear(0, glm::value_ptr(glm::vec3(1.0f)));
+	g_Framebuffer_Final->ClearDepth(depthClearValue);
+	g_Framebuffer_Final->Bind();
 
-	glBindTextureUnit(0, texture_gbuffer_position);
-	glBindTextureUnit(1, texture_gbuffer_normal);
-	glBindTextureUnit(2, texture_gbuffer_albedo);
-	glBindTextureUnit(3, texture_gbuffer_depth);
-	glBindTextureUnit(4, texture_skybox);
-	glBindTextureUnit(5, texture_lbuffer_lights);		
+	glBindTextureUnit(0, texture_gbuffer_position.Id());
+	glBindTextureUnit(1, texture_gbuffer_normal.Id());
+	glBindTextureUnit(2, texture_gbuffer_albedo.Id());
+	glBindTextureUnit(3, texture_gbuffer_depth.Id());
+	glBindTextureUnit(4, texture_skybox.Id());
+	glBindTextureUnit(5, texture_lbuffer_lights.Id());
+	glBindTextureUnit(6, texture_emission.Id());
 
 	g_Geometry_Empty->Bind();
 	g_Program_Final->Use();
@@ -498,6 +391,21 @@ void RenderGBuffer(const u32 texture_skybox,
 	g_Program_Final->SetVertexShaderUniform(kUniformFieldOfView, fieldOfView);
 	g_Program_Final->SetVertexShaderUniform(kUniformAspectRatio, f32(screenWidth) / f32(screenHeight));
 	g_Program_Final->SetVertexShaderUniform(kUniformUvsDiff, glm::vec2(1.0f, 1.0f));
+
+	glDrawArraysInstancedBaseInstance(GL_TRIANGLES, 0, 6, 1, 0);
+}
+
+void RenderEmission(const Texture& texture_light, const Texture& texture_emission)
+{
+	g_Framebuffer_Emission->Clear(0, glm::value_ptr(glm::vec3(0.0f)));
+	g_Framebuffer_Emission->Bind();
+
+	glBindTextureUnit(0, texture_light.Id());
+	glBindTextureUnit(1, texture_emission.Id());
+
+	g_Geometry_Empty->Bind();
+	g_Program_Emission->Use();
+	g_Program_Emission->SetFragmentShaderUniform(0, 0.7f);
 
 	glDrawArraysInstancedBaseInstance(GL_TRIANGLES, 0, 6, 1, 0);
 }
@@ -531,25 +439,44 @@ int main(int argc, char* argv[])
 	const auto graphicsDevice = new GraphicsDevice();
 	g_Scene_Current = new SpaceScene(*graphicsDevice);
 
-	/* framebuffer textures */
-	auto const texture_gbuffer_final = CreateTexture2D(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_final = graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
 	
-	auto const texture_gbuffer_position = CreateTexture2D(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_gbuffer_normal = CreateTexture2D(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_gbuffer_albedo = CreateTexture2D(GL_RGBA16F, GL_RGBA, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_gbuffer_depth = CreateTexture2D(GL_DEPTH_COMPONENT32, GL_DEPTH, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_gbuffer_velocity = CreateTexture2D(GL_RG16F, GL_RG, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_lbuffer_lights = CreateTexture2D(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_motion_blur = CreateTexture2D(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_transition = CreateTexture2D(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_position = graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_normal = graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_albedo = graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGBA, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_depth = graphicsDevice->CreateTexture(GL_DEPTH_COMPONENT32, GL_DEPTH, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	auto const texture_gbuffer_velocity = graphicsDevice->CreateTexture(GL_RG16F, GL_RG, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	auto const texture_lbuffer = graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	auto const texture_motion_blur = graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	auto const texture_transition = graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	auto const texture_emission = graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGBA, screenWidth, screenHeight, nullptr, GL_NEAREST);
 
-	g_Framebuffer_Geometry = CreateFramebuffer({ texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_albedo, texture_gbuffer_velocity }, texture_gbuffer_depth);
-	g_Framebuffer_Final = CreateFramebuffer({ texture_gbuffer_final });
-	g_Framebuffer_Motionblur = CreateFramebuffer({ texture_motion_blur });
-	g_Framebuffer_Lights = CreateFramebuffer({ texture_lbuffer_lights });
-	g_Framebuffer_Transition = CreateFramebuffer({ texture_transition });
+	g_Framebuffer_Geometry = new Framebuffer({ texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_albedo, texture_gbuffer_velocity, texture_emission }, texture_gbuffer_depth);
+	g_Framebuffer_Final = new Framebuffer({ texture_gbuffer_final });
+	g_Framebuffer_Emission = new Framebuffer({ texture_emission });
+	g_Framebuffer_Motionblur = new Framebuffer({ texture_motion_blur });
+	g_Framebuffer_Lights = new Framebuffer({ texture_lbuffer });
+	g_Framebuffer_Transition = new Framebuffer({ texture_transition });
 
-	g_Texture_Skybox = CreateTextureCubeFromFiles({
+	const std::string_view labelFramebufferGeometry("FB-Geometry");
+	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Geometry->Id(), labelFramebufferGeometry.length(), labelFramebufferGeometry.data());
+	
+	const std::string_view labelFramebufferFinal("FB-Final");
+	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Final->Id(), labelFramebufferFinal.length(), labelFramebufferFinal.data());
+	
+	const std::string_view labelFramebufferEmission("FB-Emission");
+	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Emission->Id(), labelFramebufferEmission.length(), labelFramebufferEmission.data());
+	
+	const std::string_view labelFramebufferMotionblur("FB-Motionblur");
+	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Motionblur->Id(), labelFramebufferMotionblur.length(), labelFramebufferMotionblur.data());
+	
+	const std::string_view labelFramebufferLights("FB-Lights");
+	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Lights->Id(), labelFramebufferLights.length(), labelFramebufferLights.data());
+	
+	const std::string_view labelFramebufferTransition("FB-Transition");
+	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Transition->Id(), labelFramebufferTransition.length(), labelFramebufferTransition.data());
+	
+	g_Texture_Skybox = TextureCube::FromFiles({
 	"./res/textures/TC_SkySpace_Xn.png",
 	"./res/textures/TC_SkySpace_Xp.png",
 	"./res/textures/TC_SkySpace_Yn.png",
@@ -570,6 +497,7 @@ int main(int argc, char* argv[])
 	g_Program_MotionBlur = new Program("../../emptyspace/res/shaders/motionblur.vert.glsl", "../../emptyspace/res/shaders/motionblur.frag.glsl");
 	g_Program_Light = new Program("../../emptyspace/res/shaders/light.vert.glsl", "../../emptyspace/res/shaders/light.frag.glsl");
 	g_Program_Quad = new Program("../../emptyspace/res/shaders/quad.vert.glsl", "../../emptyspace/res/shaders/quad.frag.glsl");
+	g_Program_Emission = new Program("../../emptyspace/res/shaders/emission.vert.glsl", "../../emptyspace/res/shaders/emission.frag.glsl");
 
 	/* uniforms */
 	constexpr auto kUniformProjection = 0;
@@ -688,17 +616,13 @@ int main(int argc, char* argv[])
 		glViewport(0, 0, screenWidth, screenHeight);
 		
 		auto constexpr depthClearValue = 1.0f;
-		glClearNamedFramebufferfv(g_Framebuffer_Geometry, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
-		glClearNamedFramebufferfv(g_Framebuffer_Geometry, GL_COLOR, 1, glm::value_ptr(glm::vec3(0.0f)));
-		glClearNamedFramebufferfv(g_Framebuffer_Geometry, GL_COLOR, 2, glm::value_ptr(glm::vec4(0.0f)));
-		glClearNamedFramebufferfv(g_Framebuffer_Geometry, GL_COLOR, 3, glm::value_ptr(glm::vec2(0.0f)));
-		glClearNamedFramebufferfv(g_Framebuffer_Geometry, GL_DEPTH, 0, &depthClearValue);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, g_Framebuffer_Geometry);
-
-		//glBindTextureUnit(0, texture_cube_diffuse);
-		//glBindTextureUnit(1, texture_cube_specular);
-		//glBindTextureUnit(2, texture_cube_normal);
+		g_Framebuffer_Geometry->Clear(0, glm::value_ptr(glm::vec3(0.0f)));
+		g_Framebuffer_Geometry->Clear(1, glm::value_ptr(glm::vec3(0.0f)));
+		g_Framebuffer_Geometry->Clear(2, glm::value_ptr(glm::vec4(0.0f)));
+		g_Framebuffer_Geometry->Clear(3, glm::value_ptr(glm::vec2(0.0f)));
+		g_Framebuffer_Geometry->Clear(4, glm::value_ptr(glm::vec4(0.0f)));
+		g_Framebuffer_Geometry->ClearDepth(depthClearValue);
+		g_Framebuffer_Geometry->Bind();
 
 		g_Program_GBuffer->Use();
 
@@ -707,12 +631,7 @@ int main(int argc, char* argv[])
 		///////////////////////// SCENE RENDER BEGIN /////////////////////////
 		for (auto& object : g_Scene_Current->Objects())
 		{
-			//if (object->ObjectMaterial != currentMaterial)
-			{
-				//currentMaterial = object->ObjectMaterial;
-				//currentMaterial->Apply();
-				object->ObjectMaterial->Apply();
-			}
+			object->ObjectMaterial->Apply();
 			switch (object->ObjectShape)
 			{
 			    case Shape::Cube: g_Geometry_Cube->Bind(); break;
@@ -749,22 +668,22 @@ int main(int argc, char* argv[])
 		/* g-buffer pass ================================================================================================== end */
 		/* lights ======================================================================================================= begin */
 
-		RenderLights(texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_depth, cameraProjection, cameraPosition, cameraDirection, visibleLights);
-
+		RenderLights(*texture_gbuffer_position, *texture_gbuffer_normal, *texture_gbuffer_depth, cameraProjection, cameraPosition, cameraDirection, visibleLights);
+		RenderEmission(*texture_lbuffer, *texture_emission);
 		/* lights ================================================================================ end */
 
 		/* resolve gbuffer ===================================================================== begin */
-		RenderGBuffer(g_Texture_Skybox, texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_albedo,
-		              texture_gbuffer_depth, texture_lbuffer_lights, screenWidth, screenHeight, fieldOfView);
+		RenderGBuffer(*g_Texture_Skybox, *texture_gbuffer_position, *texture_gbuffer_normal, *texture_gbuffer_albedo,
+		              *texture_gbuffer_depth, *texture_lbuffer, *texture_emission, screenWidth, screenHeight, fieldOfView);
 		/* resolve gbuffer ======================================================================= end */
 
-		//if (g_Enable_TransitionEffect)
+		if (g_Transition_Factor.w > 0.0f)
 		{
 			/* ============== TRANSITION EFFECT =================== */
-			graphicsDevice->ClearFramebuffer(g_Framebuffer_Transition, glm::vec3(0.0f), false);
-			
-			glBindFramebuffer(GL_FRAMEBUFFER, g_Framebuffer_Transition);
-			glBindTextureUnit(0, texture_gbuffer_final);
+			g_Framebuffer_Transition->Clear(0, glm::value_ptr(glm::vec3(0.0)));
+			g_Framebuffer_Transition->Bind();
+
+			glBindTextureUnit(0, texture_gbuffer_final->Id());
 
 			g_Program_Quad->Use();
 			g_Program_Quad->SetFragmentShaderUniform(0, g_Transition_Factor);
@@ -784,11 +703,11 @@ int main(int argc, char* argv[])
 		if (g_Enable_MotionBlur)
 		{
 			/* motion blur ========================================================================= begin */
-			glClearNamedFramebufferfv(g_Framebuffer_Motionblur, GL_COLOR, 0, glm::value_ptr(glm::vec3(0.0f)));
-			glBindFramebuffer(GL_FRAMEBUFFER, g_Framebuffer_Motionblur);
+			g_Framebuffer_Motionblur->Clear(0, glm::value_ptr(glm::vec3(0.0f)));
+			g_Framebuffer_Motionblur->Bind();
 
-			glBindTextureUnit(0, texture_transition);
-			glBindTextureUnit(1, texture_gbuffer_velocity);
+			glBindTextureUnit(0, g_Transition_Factor.w > 0.0f ? texture_transition->Id() : texture_gbuffer_final->Id());
+			glBindTextureUnit(1, texture_gbuffer_velocity->Id());
 
 			g_Geometry_Empty->Bind();
 			g_Program_MotionBlur->Use();
@@ -803,11 +722,11 @@ int main(int argc, char* argv[])
 		glViewport(0, 0, screenWidth, screenHeight);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glBlitNamedFramebuffer(g_Enable_MotionBlur 
-			? g_Framebuffer_Motionblur 
-			: g_Enable_TransitionEffect 
-			    ? g_Framebuffer_Transition
-			    : g_Framebuffer_Final, 0, 0, 0, screenWidth, screenHeight, 0, 0, g_Window_Width, g_Window_Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBlitNamedFramebuffer(g_Enable_MotionBlur
+			? g_Framebuffer_Motionblur->Id()
+			: g_Enable_TransitionEffect
+			    ? g_Framebuffer_Transition->Id()
+			    : g_Framebuffer_Final->Id(), 0, 0, 0, screenWidth, screenHeight, 0, 0, g_Window_Width, g_Window_Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 		glFinish();
 		glfwSwapBuffers(g_Window);

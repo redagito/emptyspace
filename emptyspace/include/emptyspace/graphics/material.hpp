@@ -4,30 +4,32 @@
 #include <glad/glad.h>
 #include <glm/vec3.hpp>
 
+class Texture;
+
 class Material final
 {
 public:
 	bool operator< (const Material& material) const
 	{
-		return _textureDiffuse < material._textureDiffuse && _textureNormal < material._textureNormal && _textureSpecular < material._textureSpecular;
+		return _textureDiffuse->Id() < material._textureDiffuse->Id() && _textureNormal->Id() < material._textureNormal->Id() && _textureSpecular->Id() < material._textureSpecular->Id();
 	}
 	
-	Material(const u32 textureDiffuse, const u32 textureNormal, const u32 textureSpecular)
+	Material(Texture* textureDiffuse, Texture* textureNormal, Texture* textureSpecular)
 		: _textureDiffuse{textureDiffuse}, _textureNormal{textureNormal}, _textureSpecular{textureSpecular}
 	{		
 	}
 	
 	void Apply() const
 	{
-		glBindTextureUnit(0, _textureDiffuse);
-		glBindTextureUnit(1, _textureSpecular);
-		glBindTextureUnit(2, _textureNormal);
+		glBindTextureUnit(0, _textureDiffuse->Id());
+		glBindTextureUnit(1, _textureSpecular->Id());
+		glBindTextureUnit(2, _textureNormal->Id());
 	}
 
 private:
-	u32 _textureDiffuse{};
-	u32 _textureNormal{};
-	u32 _textureSpecular{};
+	Texture* _textureDiffuse{};
+	Texture* _textureNormal{};
+	Texture* _textureSpecular{};
 
 	glm::vec3 _diffuse{ 0.2f, 0.2f, 0.2f };
 	glm::vec3 _specular{ 0.1f, 0.1f, 0.1f };

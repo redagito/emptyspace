@@ -18,16 +18,13 @@ public:
 
 	}
 
-	~SpaceScene() override
-	{
-
-	}
+	~SpaceScene() override = default;
 
 	void Cleanup() override
 	{
-		_graphicsDevice.DestroyTexture(_textureCubeDiffuse);
-		_graphicsDevice.DestroyTexture(_textureCubeSpecular);
-		_graphicsDevice.DestroyTexture(_textureCubeNormal);
+		delete _textureCubeDiffuse;
+		delete _textureCubeSpecular;
+		delete _textureCubeNormal;
 
 		delete _bufferAsteroids;
 		delete _defaultMaterial;
@@ -49,7 +46,7 @@ public:
 	}
 
 	// TODO(deccer): remove this
-	Buffer* GetAsteroidInstanceBuffer() const
+	[[nodiscard]] Buffer* GetAsteroidInstanceBuffer() const
 	{
 		return _bufferAsteroids;
 	}
@@ -58,7 +55,8 @@ protected:
 	void InitializeLights()
 	{
 		auto lights = CreateRandomLights(100);
-		lights.emplace_back(1, glm::vec3(0), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0032f, 0.09f, 32.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		//std::vector<Light> lights;
+		//lights.emplace_back(0, glm::vec3(0.0f, 8.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.032f, 0.9f, 3200.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 		for (auto& light : lights)
 		{
@@ -68,18 +66,15 @@ protected:
 	
 	void InitializeTextures()
 	{
-		_textureCubeDiffuse = CreateTexture2DFromfile("./res/textures/T_Default_D.png", STBI_rgb);
-		_textureCubeSpecular = CreateTexture2DFromfile("./res/textures/T_Default_S.png", STBI_grey);
-		_textureCubeNormal = CreateTexture2DFromfile("./res/textures/T_Default_N.png", STBI_rgb);
+		_textureCubeDiffuse = Texture::FromFile("./res/textures/T_Default_D.png", STBI_rgb);
+		_textureCubeSpecular = Texture::FromFile("./res/textures/T_Default_S.png", STBI_grey);
+		_textureCubeNormal = Texture::FromFile("./res/textures/T_Default_N.png", STBI_rgb);
 
 		_defaultMaterial = new Material(_textureCubeDiffuse, _textureCubeNormal, _textureCubeSpecular);
 
 		auto const asteroidInstances = CreateAsteroidInstances(5000);
 
 		_bufferAsteroids = new Buffer(asteroidInstances);
-
-		auto lights = CreateRandomLights(100);
-		lights.emplace_back(1, glm::vec3(0), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0032f, 0.09f, 32.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
 	void InternalDraw(f32 deltaTime) override
@@ -98,11 +93,11 @@ protected:
 		_objects[0]->ModelViewProjection = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 1.0f, 10.0f));
 		_objects[1]->ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter) * glm::rotate(glm::mat4(1.0f), orbitProgression * cubeSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
 
-		glm::quat r = glm::conjugate(glm::toQuat(glm::lookAt(camera.Position, camera.Position - camera.Direction, glm::vec3(0, 1, 0))));
+		const auto r = glm::conjugate(glm::toQuat(glm::lookAt(camera.Position, camera.Position - camera.Direction, glm::vec3(0, 1, 0))));
 
 		auto shipModel = glm::translate(glm::mat4(1.0f), camera.Position + 0.25f * camera.Direction + glm::vec3(0.25f, -0.5f, 0.0f));
 
-		auto angle = glm::atan(camera.Direction.x, camera.Direction.z);
+		const auto angle = glm::atan(camera.Direction.x, camera.Direction.z);
 		glm::quat shipQuat = { 0.0f, 1 * glm::sin(angle / 2.0f), 0.0f, glm::cos(angle / 2.0f) };
 		shipModel *= glm::toMat4(r);//glm::rotate(shipModel, cameraDirection.x, glm::vec3(0.0f, 1.0f, 0.0f));
 		_objects[2]->ModelViewProjection = shipModel;// *glm::translate(glm::mat4(1.0f), cameraPosition + 2.0f * cameraDirection);
@@ -193,17 +188,6 @@ private:
 		return lights;
 	}
 
-	static std::vector<Light> CreateLights()
-	{
-		std::vector<Light> lights;
-		lights.emplace_back(0, glm::vec3(-80, 1, +80), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.032f, 0.09f, 60.0f));
-		lights.emplace_back(0, glm::vec3(-80, 1, -80), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.032f, 0.09f, 60.0f));
-		lights.emplace_back(0, glm::vec3(+80, 1, -80), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.032f, 0.09f, 60.0f));
-		lights.emplace_back(0, glm::vec3(+80, 1, +80), glm::vec3(1.2f, 0.3f, 1.1f), glm::vec3(0.032f, 0.09f, 60.0f));
-
-		return lights;
-	}
-
 	static glm::vec3 OrbitAxis(const f32 angle, const glm::vec3& axis, const glm::vec3& spread)
 	{
 		return glm::angleAxis(angle, axis) * spread;
@@ -212,9 +196,9 @@ private:
 	Material* _defaultMaterial;
 	
 	GraphicsDevice& _graphicsDevice;
-	u32 _textureCubeDiffuse{};
-	u32 _textureCubeSpecular{};
-	u32 _textureCubeNormal{};
+	Texture* _textureCubeDiffuse{};
+	Texture* _textureCubeSpecular{};
+	Texture* _textureCubeNormal{};
 
 	Buffer* _bufferAsteroids;
 	std::vector<Scene*> _scenes;

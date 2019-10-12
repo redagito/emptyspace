@@ -138,10 +138,9 @@ void PhysicsScene::Boost(Direction direction, f32 acceleration)
 
 void PhysicsScene::Tumble(const float x, const float y)
 {
-    auto sensitivity = 0.001f;
+	const auto sensitivity = 0.001f;
 
     AngularThrust.x += y * sensitivity;
     AngularThrust.y += x * sensitivity;
-
     Booster->setDriveVelocity(LinearThrust, AngularThrust);
 }

@@ -5,6 +5,10 @@
     <ClCompile Include="..\external\glad\src\glad.c" />
     <ClCompile Include="source\physics.cpp" />
     <ClCompile Include="source\scenes\scenenode.cpp" />
+    <ClCompile Include="source\graphics\textures.cpp" />
+    <ClCompile Include="source\graphics\texturecube.cpp" />
+    <ClCompile Include="source\graphics\framebuffer.cpp" />
+    <ClCompile Include="source\graphics\graphicsdevice.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\emptyspace\types.hpp" />
@@ -28,6 +32,8 @@
     <ClInclude Include="include\emptyspace\camera.hpp" />
     <ClInclude Include="include\emptyspace\experiment.hpp" />
     <ClInclude Include="include\emptyspace\scenes\component.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\texturecube.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\framebuffer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
@@ -41,6 +47,8 @@
     <None Include="res\shaders\motionblur.frag.glsl" />
     <None Include="res\shaders\motionblur.vert.glsl" />
     <None Include="res\shaders\quad.frag.glsl" />
+    <None Include="res\shaders\emission.vert.glsl" />
+    <None Include="res\shaders\emission.frag.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\textures\TC_SkyRed_Xn.png" />

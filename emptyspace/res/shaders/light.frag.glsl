@@ -105,5 +105,5 @@ void main()
 //		return (ambientLight + diffuseLight + specularLight);
 	}
 
-    fs_color = vec4(finalLight, 1.0);
+	fs_color = vec4(finalLight, 1.0);
 }
