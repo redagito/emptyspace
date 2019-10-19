@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <array>
 
-Framebuffer::Framebuffer(const std::vector<Texture*>& colorAttachments, const Texture* depthAttachment)
+Framebuffer::Framebuffer(std::string_view label, const std::vector<Texture*>& colorAttachments, const Texture* depthAttachment)
 {
 	glCreateFramebuffers(1, &_id);
 
@@ -30,6 +30,8 @@ Framebuffer::Framebuffer(const std::vector<Texture*>& colorAttachments, const Te
 	{
 		throw std::runtime_error("GL: Incomplete framebuffer.");
 	}
+
+	glObjectLabel(GL_FRAMEBUFFER, _id, label.length(), label.data());
 }
 
 Framebuffer::~Framebuffer()

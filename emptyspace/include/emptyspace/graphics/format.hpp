@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <memory>
 
 template <typename ... Args>
 std::string FormatString(const std::string& format, Args ... args)

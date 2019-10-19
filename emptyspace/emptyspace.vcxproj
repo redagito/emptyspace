@@ -102,8 +102,11 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\external\glad\src\glad.c" />
+    <ClCompile Include="source\graphics\buffer.cpp" />
     <ClCompile Include="source\graphics\framebuffer.cpp" />
+    <ClCompile Include="source\graphics\geometry.cpp" />
     <ClCompile Include="source\graphics\graphicsdevice.cpp" />
+    <ClCompile Include="source\graphics\Program.cpp" />
     <ClCompile Include="source\graphics\texturecube.cpp" />
     <ClCompile Include="source\graphics\textures.cpp" />
     <ClCompile Include="source\main.cpp" />

@@ -9,6 +9,9 @@
     <ClCompile Include="source\graphics\texturecube.cpp" />
     <ClCompile Include="source\graphics\framebuffer.cpp" />
     <ClCompile Include="source\graphics\graphicsdevice.cpp" />
+    <ClCompile Include="source\graphics\Program.cpp" />
+    <ClCompile Include="source\graphics\geometry.cpp" />
+    <ClCompile Include="source\graphics\buffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\emptyspace\types.hpp" />

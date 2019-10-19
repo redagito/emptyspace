@@ -3,13 +3,14 @@
 #include <emptyspace/types.hpp>
 
 #include <vector>
+#include <string_view>
 
 class Texture;
 
 class Framebuffer
 {
 public:
-	Framebuffer(const std::vector<Texture*>& colorAttachments, const Texture* depthAttachment = nullptr);
+	Framebuffer(std::string_view label, const std::vector<Texture*>& colorAttachments, const Texture* depthAttachment = nullptr);
 	~Framebuffer();
 	
 	void Bind() const;

@@ -56,6 +56,17 @@ Geometry* g_Geometry_Plane{ nullptr };
 Geometry* g_Geometry_Ship{ nullptr };
 Geometry* g_Geometry_PointLight{ nullptr };
 
+Texture* texture_gbuffer_final{ nullptr };
+Texture* texture_gbuffer_position{ nullptr };
+Texture* texture_gbuffer_normal{ nullptr };
+Texture* texture_gbuffer_albedo{ nullptr };
+Texture* texture_gbuffer_depth{ nullptr };
+Texture* texture_gbuffer_velocity{ nullptr };
+Texture* texture_lbuffer{ nullptr };
+Texture* texture_motion_blur{ nullptr };
+Texture* texture_transition{ nullptr };
+Texture* texture_emission{ nullptr };
+
 Framebuffer* g_Framebuffer_Geometry{ };
 Framebuffer* g_Framebuffer_Emission{ };
 Framebuffer* g_Framebuffer_Final{ };
@@ -103,6 +114,17 @@ void Cleanup()
 	delete g_Framebuffer_Lights;
 	delete g_Framebuffer_Transition;
 	delete g_Framebuffer_Emission;
+
+	delete texture_gbuffer_final;
+	delete texture_gbuffer_position;
+	delete texture_gbuffer_normal;
+	delete texture_gbuffer_albedo;
+	delete texture_gbuffer_depth;
+	delete texture_gbuffer_velocity;
+	delete texture_lbuffer;
+	delete texture_motion_blur;
+	delete texture_transition;
+	delete texture_emission;
 
 	delete g_Texture_Skybox;
 
@@ -316,18 +338,6 @@ void RenderLights(const Texture& gbufferPosition,
 	auto lights = g_Scene_Current->Lights();
 	for (auto& light : lights)
 	{
-		if (light.Type == 1)
-		{
-			light.Position = cameraPosition;
-			light.Direction = cameraDirection;
-			light.Attenuation = glm::vec3(0.001, 0.01, 20);
-		}
-		//if (lightIndex == 1)
-		//{
-		//	light.Position = cameraPosition + (-10.0f * cameraDirection);
-		//	light.Color = glm::vec3(1.0f, 0.8f, 0.0f);
-		//	light.Attenuation = glm::vec3(100, 100, 100);
-		//}
 		lightIndex++;
 		
 		if (!g_Frustum.SphereInFrustum(light.Position.x, light.Position.y, light.Position.z, light.Attenuation.z))
@@ -431,7 +441,7 @@ int main(int argc, char* argv[])
 	}
 
 	InitializeOpenGL(g_Window);
-	InitializePhysics();
+	InitializePhysics();	
 
 	const auto screenWidth = g_Window_Width / 1;
 	const auto screenHeight = g_Window_Height / 1;
@@ -439,57 +449,39 @@ int main(int argc, char* argv[])
 	const auto graphicsDevice = new GraphicsDevice();
 	g_Scene_Current = new SpaceScene(*graphicsDevice);
 
-	auto const texture_gbuffer_final = graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	texture_gbuffer_final = graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
 	
-	auto const texture_gbuffer_position = graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_gbuffer_normal = graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_gbuffer_albedo = graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGBA, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_gbuffer_depth = graphicsDevice->CreateTexture(GL_DEPTH_COMPONENT32, GL_DEPTH, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_gbuffer_velocity = graphicsDevice->CreateTexture(GL_RG16F, GL_RG, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_lbuffer = graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_motion_blur = graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_transition = graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
-	auto const texture_emission = graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGBA, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	texture_gbuffer_position = graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	texture_gbuffer_normal = graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	texture_gbuffer_albedo = graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGBA, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	texture_gbuffer_depth = graphicsDevice->CreateTexture(GL_DEPTH_COMPONENT32, GL_DEPTH, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	texture_gbuffer_velocity = graphicsDevice->CreateTexture(GL_RG16F, GL_RG, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	texture_lbuffer = graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	texture_motion_blur = graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	texture_transition = graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, screenWidth, screenHeight, nullptr, GL_NEAREST);
+	texture_emission = graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGBA, screenWidth, screenHeight, nullptr, GL_NEAREST);
 
-	g_Framebuffer_Geometry = new Framebuffer({ texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_albedo, texture_gbuffer_velocity, texture_emission }, texture_gbuffer_depth);
-	g_Framebuffer_Final = new Framebuffer({ texture_gbuffer_final });
-	g_Framebuffer_Emission = new Framebuffer({ texture_emission });
-	g_Framebuffer_Motionblur = new Framebuffer({ texture_motion_blur });
-	g_Framebuffer_Lights = new Framebuffer({ texture_lbuffer });
-	g_Framebuffer_Transition = new Framebuffer({ texture_transition });
+	g_Framebuffer_Geometry = new Framebuffer("FB-Geometry", { texture_gbuffer_position, texture_gbuffer_normal, texture_gbuffer_albedo, texture_gbuffer_velocity, texture_emission }, texture_gbuffer_depth);
+	g_Framebuffer_Final = new Framebuffer("FB-Final", { texture_gbuffer_final });
+	g_Framebuffer_Emission = new Framebuffer("FB-Emission", { texture_emission });
+	g_Framebuffer_Motionblur = new Framebuffer("FB-Motionblur", { texture_motion_blur });
+	g_Framebuffer_Lights = new Framebuffer("FB-Lights", { texture_lbuffer });
+	g_Framebuffer_Transition = new Framebuffer("FB-Transition", { texture_transition });
 
-	const std::string_view labelFramebufferGeometry("FB-Geometry");
-	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Geometry->Id(), labelFramebufferGeometry.length(), labelFramebufferGeometry.data());
-	
-	const std::string_view labelFramebufferFinal("FB-Final");
-	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Final->Id(), labelFramebufferFinal.length(), labelFramebufferFinal.data());
-	
-	const std::string_view labelFramebufferEmission("FB-Emission");
-	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Emission->Id(), labelFramebufferEmission.length(), labelFramebufferEmission.data());
-	
-	const std::string_view labelFramebufferMotionblur("FB-Motionblur");
-	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Motionblur->Id(), labelFramebufferMotionblur.length(), labelFramebufferMotionblur.data());
-	
-	const std::string_view labelFramebufferLights("FB-Lights");
-	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Lights->Id(), labelFramebufferLights.length(), labelFramebufferLights.data());
-	
-	const std::string_view labelFramebufferTransition("FB-Transition");
-	glObjectLabel(GL_FRAMEBUFFER, g_Framebuffer_Transition->Id(), labelFramebufferTransition.length(), labelFramebufferTransition.data());
-	
 	g_Texture_Skybox = TextureCube::FromFiles({
-	"./res/textures/TC_SkySpace_Xn.png",
-	"./res/textures/TC_SkySpace_Xp.png",
-	"./res/textures/TC_SkySpace_Yn.png",
-	"./res/textures/TC_SkySpace_Yp.png",
-	"./res/textures/TC_SkySpace_Zn.png",
-	"./res/textures/TC_SkySpace_Zp.png"
+	"./res/textures/TC_SkyRed_Xn.png",
+	"./res/textures/TC_SkyRed_Xp.png",
+	"./res/textures/TC_SkyRed_Yn.png",
+	"./res/textures/TC_SkyRed_Yp.png",
+	"./res/textures/TC_SkyRed_Zn.png",
+	"./res/textures/TC_SkyRed_Zp.png"
 		});
 
 	g_Geometry_Empty = Geometry::CreateEmpty();
 	g_Geometry_Cube = Geometry::CreateCube(1, 1, 1);
 	g_Geometry_Plane = Geometry::CreatePlane(1, 1);
 	g_Geometry_Ship = Geometry::CreateFromFile("./res/models/shipA_noWindshield.obj");
-	g_Geometry_PointLight = Geometry::CreateFromFilePlain("./res/models/PointLight.obj");
+	g_Geometry_PointLight = Geometry::CreatePlainFromFile("./res/models/PointLight.obj");
 	   	
 	/* shaders */
 	g_Program_Final = new Program("../../emptyspace/res/shaders/main.vert.glsl", "../../emptyspace/res/shaders/main.frag.glsl");

@@ -44,6 +44,15 @@ public:
 		return _objects;
 	}
 
+	std::vector<SceneObject*> GetVisibleObjects()
+	{
+		const auto node = RootNode;
+		while (node != nullptr)
+		{
+			
+		}
+	}
+
 protected:
 	virtual void InternalDraw(f32 deltaTime)
 	{
