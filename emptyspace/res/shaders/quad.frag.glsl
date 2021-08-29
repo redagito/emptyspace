@@ -1,20 +1,15 @@
 #version 450
 
-layout(location = 0) out vec4 fs_color;
+layout(location = 1) in vec2 fs_uv;
+
+layout(location = 0) out vec4 out_color;
 
 layout(binding = 0) uniform sampler2D t_final;
-
-layout(location = 0) uniform float u_blend_factor;
-
-in in_block
-{
-	vec2 uv;
-} i;
+layout(location = 0) uniform vec4 u_blend_color;
 
 void main()
 {
-	vec3 redColor = vec3(0.0f, 0.0f, 0.0f);
-	vec3 finalColor = texture(t_final, i.uv).rgb;
+    vec3 v_final_color = texture(t_final, fs_uv).rgb;
 
-	fs_color = vec4(mix(finalColor, redColor, u_blend_factor), 1.0f);
+    out_color = vec4(mix(v_final_color, u_blend_color.rgb, u_blend_color.w), 1.0f);
 }

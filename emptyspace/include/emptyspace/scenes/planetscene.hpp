@@ -5,35 +5,40 @@
 class PlanetScene : public Scene
 {
 public:
-	PlanetScene()
-	{
+    PlanetScene()
+    {
 
-	}
+    }
 
-	~PlanetScene() override
-	{
+    ~PlanetScene() override
+    {
 
-	}
+    }
 
-	void Initialize() override
-	{
-		InitializeTextures();
-	}
+    void Cleanup() override
+    {
+        
+    }
+
+    void Initialize() override
+    {
+        InitializeTextures();
+    }
 
 protected:
 
-	void InternalDraw(f32 deltaTime) override
-	{
-	}
+    void InternalDraw(f32 deltaTime) override
+    {
+    }
 
-	void InternalUpdate(f32 deltaTime) override
-	{
-	}
+    void InternalUpdate(f32 deltaTime, const Camera& camera) override
+    {
+    }
 
 private:
 
-	void InitializeTextures()
-	{
+    void InitializeTextures()
+    {
 
-	}
+    }
 };

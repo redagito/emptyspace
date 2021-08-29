@@ -47,7 +47,7 @@ private:
     physx::PxDefaultCpuDispatcher* _dispatcher = nullptr;
     physx::PxScene*                _scene      = nullptr;
 
-	physx::PxMaterial*             _material   = nullptr;
+    physx::PxMaterial*             _material   = nullptr;
 
-	physx::PxPvd*                  _visualDebugger = nullptr;
+    physx::PxPvd*                  _visualDebugger = nullptr;
 };
