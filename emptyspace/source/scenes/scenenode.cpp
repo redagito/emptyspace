@@ -37,8 +37,7 @@ SceneNode* SceneNode::CreateChild()
 
 void SceneNode::RemoveChild(SceneNode* node)
 {
-	const auto foundNode = std::find(_children.begin(), _children.end(), node);
-	if (foundNode != _children.end())
+    if (const auto foundNode = std::find(_children.begin(), _children.end(), node); foundNode != _children.end())
 	{
 		_children.erase(foundNode);
 	}

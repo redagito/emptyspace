@@ -131,14 +131,14 @@ void PhysicsScene::Boost(Direction direction, f32 acceleration)
         AngularThrust = PxVec3(0.0f);
     }
 
-    std::clog << "LinearThrust (" << LinearThrust.x << ", " << LinearThrust.y << ", " << LinearThrust.z << ")" << std::endl;
-    std::clog << "AngularThrust (" << AngularThrust.x << ", " << AngularThrust.y << ", " << AngularThrust.z << ")" << std::endl;
+    //std::clog << "LinearThrust (" << LinearThrust.x << ", " << LinearThrust.y << ", " << LinearThrust.z << ")" << std::endl;
+    //std::clog << "AngularThrust (" << AngularThrust.x << ", " << AngularThrust.y << ", " << AngularThrust.z << ")" << std::endl;
     Booster->setDriveVelocity(LinearThrust, AngularThrust);
 }
 
 void PhysicsScene::Tumble(const float x, const float y)
 {
-	const auto sensitivity = 0.001f;
+    const auto sensitivity = 0.001f;
 
     AngularThrust.x += y * sensitivity;
     AngularThrust.y += x * sensitivity;

@@ -5,8 +5,7 @@
 class Entity final : public NonCopyable
 {
 public:
-	Entity()
-	{
-		
-	}
+    Entity()
+    {
+    }
 };

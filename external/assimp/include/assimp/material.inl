@@ -83,6 +83,8 @@ inline unsigned int aiMaterial::GetTextureCount(aiTextureType type) const
 }
 
 // ---------------------------------------------------------------------------
+#undef max
+#undef min
 template <typename Type>
 inline aiReturn aiMaterial::Get(const char* pKey,unsigned int type,
     unsigned int idx, Type* pOut,

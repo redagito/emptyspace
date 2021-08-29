@@ -106,7 +106,9 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <ClCompile Include="source\graphics\framebuffer.cpp" />
     <ClCompile Include="source\graphics\geometry.cpp" />
     <ClCompile Include="source\graphics\graphicsdevice.cpp" />
-    <ClCompile Include="source\graphics\Program.cpp" />
+    <ClCompile Include="source\graphics\material.cpp" />
+    <ClCompile Include="source\graphics\meshdata.cpp" />
+    <ClCompile Include="source\graphics\program.cpp" />
     <ClCompile Include="source\graphics\texturecube.cpp" />
     <ClCompile Include="source\graphics\textures.cpp" />
     <ClCompile Include="source\main.cpp" />
@@ -121,7 +123,9 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <ClInclude Include="include\emptyspace\graphics\framebuffer.hpp" />
     <ClInclude Include="include\emptyspace\graphics\graphicsdevice.hpp" />
     <ClInclude Include="include\emptyspace\graphics\material.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\meshdata.hpp" />
     <ClInclude Include="include\emptyspace\graphics\texturecube.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\vertexformats.hpp" />
     <ClInclude Include="include\emptyspace\io\filewatcher.hpp" />
     <ClInclude Include="include\emptyspace\graphics\geometry.hpp" />
     <ClInclude Include="include\emptyspace\io\file.hpp" />
@@ -139,6 +143,9 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <ClInclude Include="include\emptyspace\graphics\format.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\Projects\EngineKit\v1\examples\EngineKit.Demo.Forward.Assets\Models\SM_CliffRock.fbx" />
+    <None Include="..\..\..\Projects\EngineKit\v1\examples\EngineKit.Demo.Forward.Assets\Models\SM_Cube.fbx" />
+    <None Include="..\..\..\Projects\EngineKit\v1\examples\EngineKit.Demo.Forward.Assets\Models\SM_Gate.fbx" />
     <None Include="..\README.md" />
     <None Include="res\shaders\emission.frag.glsl" />
     <None Include="res\shaders\emission.vert.glsl" />
@@ -154,6 +161,12 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <None Include="res\shaders\quad.vert.glsl" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\textures\TC_Miramar_Xn.png" />
+    <Image Include="res\textures\TC_Miramar_Xp.png" />
+    <Image Include="res\textures\TC_Miramar_Yn.png" />
+    <Image Include="res\textures\TC_Miramar_Yp.png" />
+    <Image Include="res\textures\TC_Miramar_Zn.png" />
+    <Image Include="res\textures\TC_Miramar_Zp.png" />
     <Image Include="res\textures\TC_SkyRed_Xn.png" />
     <Image Include="res\textures\TC_SkyRed_Xp.png" />
     <Image Include="res\textures\TC_SkyRed_Yn.png" />
@@ -169,6 +182,9 @@ xcopy /Y /E "$(ProjectDir)res" "$(TargetDir)res\"</Command>
     <Image Include="res\textures\T_Default_D.png" />
     <Image Include="res\textures\T_Default_N.png" />
     <Image Include="res\textures\T_Default_S.png" />
+    <Image Include="res\textures\T_PlasticMesh_D.jpg" />
+    <Image Include="res\textures\T_PlasticMesh_N.jpg" />
+    <Image Include="res\textures\T_PlasticMesh_S.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

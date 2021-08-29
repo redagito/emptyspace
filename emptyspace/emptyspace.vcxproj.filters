@@ -9,9 +9,11 @@
     <ClCompile Include="source\graphics\texturecube.cpp" />
     <ClCompile Include="source\graphics\framebuffer.cpp" />
     <ClCompile Include="source\graphics\graphicsdevice.cpp" />
-    <ClCompile Include="source\graphics\Program.cpp" />
+    <ClCompile Include="source\graphics\program.cpp" />
     <ClCompile Include="source\graphics\geometry.cpp" />
     <ClCompile Include="source\graphics\buffer.cpp" />
+    <ClCompile Include="source\graphics\material.cpp" />
+    <ClCompile Include="source\graphics\meshdata.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\emptyspace\types.hpp" />
@@ -37,6 +39,8 @@
     <ClInclude Include="include\emptyspace\scenes\component.hpp" />
     <ClInclude Include="include\emptyspace\graphics\texturecube.hpp" />
     <ClInclude Include="include\emptyspace\graphics\framebuffer.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\vertexformats.hpp" />
+    <ClInclude Include="include\emptyspace\graphics\meshdata.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
@@ -52,6 +56,9 @@
     <None Include="res\shaders\quad.frag.glsl" />
     <None Include="res\shaders\emission.vert.glsl" />
     <None Include="res\shaders\emission.frag.glsl" />
+    <None Include="..\..\..\Projects\EngineKit\v1\examples\EngineKit.Demo.Forward.Assets\Models\SM_CliffRock.fbx" />
+    <None Include="..\..\..\Projects\EngineKit\v1\examples\EngineKit.Demo.Forward.Assets\Models\SM_Cube.fbx" />
+    <None Include="..\..\..\Projects\EngineKit\v1\examples\EngineKit.Demo.Forward.Assets\Models\SM_Gate.fbx" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\textures\TC_SkyRed_Xn.png" />
@@ -69,5 +76,14 @@
     <Image Include="res\textures\T_Default_D.png" />
     <Image Include="res\textures\T_Default_N.png" />
     <Image Include="res\textures\T_Default_S.png" />
+    <Image Include="res\textures\T_PlasticMesh_D.jpg" />
+    <Image Include="res\textures\T_PlasticMesh_N.jpg" />
+    <Image Include="res\textures\T_PlasticMesh_S.jpg" />
+    <Image Include="res\textures\TC_Miramar_Zp.png" />
+    <Image Include="res\textures\TC_Miramar_Xn.png" />
+    <Image Include="res\textures\TC_Miramar_Xp.png" />
+    <Image Include="res\textures\TC_Miramar_Yn.png" />
+    <Image Include="res\textures\TC_Miramar_Yp.png" />
+    <Image Include="res\textures\TC_Miramar_Zn.png" />
   </ItemGroup>
 </Project>

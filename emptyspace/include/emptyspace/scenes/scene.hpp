@@ -10,63 +10,67 @@ struct SceneObject;
 class Scene
 {
 public:
-	Scene()
-	{
-		RootNode = new SceneNode(nullptr);
-	}
+    Scene()
+    {
+        RootNode = new SceneNode(nullptr);
+    }
 
-	virtual ~Scene()
-	{
+    virtual ~Scene()
+    {
 
-	}
+    }
 
-	virtual void Cleanup() = 0;
+    virtual void Cleanup() = 0;
 
-	inline void Draw(f32 deltaTime)
-	{
-		InternalDraw(deltaTime);
-	}
+    inline void Draw(f32 deltaTime)
+    {
+        InternalDraw(deltaTime);
+    }
 
-	virtual void Initialize() = 0;
+    virtual void Initialize();
 
-	inline void Update(f32 deltaTime, const Camera& camera)
-	{
-		InternalUpdate(deltaTime, camera);
-	}
+    inline void Update(const f32 deltaTime, const Camera& camera)
+    {
+        InternalUpdate(deltaTime, camera);
+    }
 
-	std::vector<Light>& Lights()
-	{
-		return _lights;
-	}
-	
-	std::vector<SceneObject*>& Objects()
-	{
-		return _objects;
-	}
+    std::vector<Light>& Lights()
+    {
+        return _lights;
+    }
+    
+    std::vector<SceneObject*>& Objects()
+    {
+        return _objects;
+    }
 
-	std::vector<SceneObject*> GetVisibleObjects()
-	{
-		const auto node = RootNode;
-		while (node != nullptr)
-		{
-			
-		}
-	}
+    std::vector<SceneObject*> GetVisibleObjects()
+    {
+        const auto node = RootNode;
+        while (node != nullptr)
+        {
+            
+        }
+    }
 
 protected:
-	virtual void InternalDraw(f32 deltaTime)
-	{
-	}
+    virtual void InternalDraw(f32 deltaTime)
+    {
+    }
 
-	virtual void InternalUpdate(f32 deltaTime, const Camera& camera)
-	{
-	}
+    virtual void InternalUpdate(f32 deltaTime, const Camera& camera)
+    {
+    }
 
-	std::vector<Light> _lights;
-	std::vector<Material*> _materials;
-	std::vector<SceneObject*> _objects;
+    std::vector<Light> _lights;
+    std::vector<Material*> _materials;
+    std::vector<SceneObject*> _objects;
 
-	SceneNode* RootNode;
+    SceneNode* RootNode;
 private:
 
 };
+
+inline void Scene::Initialize()
+{
+}

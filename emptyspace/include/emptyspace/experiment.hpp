@@ -6,21 +6,21 @@
 
 class Model
 {
-	u32 vertex_count{0};
+    u32 vertex_count{0};
 };
 
 class ModelInstance
 {
-	Model model{};
-	glm::mat4 model_matrix{};
-	
+    Model model{};
+    glm::mat4 model_matrix{};
+    
 };
 
 class Buffer
 {
 public:
 private:
-	u32 id{0};
+    u32 id{0};
 };
 
 
