@@ -1,8 +1,13 @@
-# emptyspace
-Yet another space game.
+# EmptySpace - Yet Another Space Game
+
+![Screenshot 1](./doc/screenshot1.jpg)
+![Screenshot 2](./doc/screenshot2.jpg)
+
+Space flight Demo with OpenGL based deferred rendering.
 
 ## Controls
-```ruby
+
+```
  - W = accelerate forward
  - S = accelerate backward
  - A = accelerate to the left
@@ -16,10 +21,29 @@ Yet another space game.
  - Mouse = define direction to accelerate
 ```
 
-### Used Libraries
-- GLFW
-- GLAD
-- PhysX
-- nothings/stb (stb_image)
-- glm
-- assimp
+## Requirements
+
+Development is done with
+* Conan 2.x
+* CMake 3.27.x
+* Visual Studio 2022 Community Edition
+
+External dependencies
+* GLFW
+* GLAD
+* PhysX
+* stb_image
+* glm
+* assimp
+
+## Building
+
+Conan install for debug and release build types
+```
+conan install . --build=missing --settings=build_type=Debug && conan install . --build=missing --settings=build_type=Release
+```
+
+CMake project generation
+```
+cmake --preset conan-default
+```
