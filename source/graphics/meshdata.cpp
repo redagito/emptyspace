@@ -231,7 +231,7 @@ void MeshData::CalculateTangents()
         _bitangents[i + 2] += bitangent;
     }
 
-    for (int i = 0; i < _positions.size(); ++i)
+    for (size_t i = 0; i < _positions.size(); ++i)
     {
         auto& normal = _normals[i];
         auto& tangent = _tangents[i];

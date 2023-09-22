@@ -88,8 +88,6 @@ protected:
 		static auto orbitProgression = 0.0f;
 		auto const orbitCenter = glm::vec3(0.0f, 0.0f, 0.0f);
 
-		glm::quat q = glm::rotate(glm::mat4(1.0f), camera.Direction.y, glm::vec3(0.0f, 1.0f, 0.0f));
-
 		_objects[0]->ModelViewProjection = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 1.0f, 10.0f));
 		_objects[1]->ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter) * glm::rotate(glm::mat4(1.0f), orbitProgression * cubeSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -97,8 +95,6 @@ protected:
 
 		auto shipModel = glm::translate(glm::mat4(1.0f), camera.Position + 0.25f * camera.Direction + glm::vec3(0.25f, -0.5f, 0.0f));
 
-		const auto angle = glm::atan(camera.Direction.x, camera.Direction.z);
-		glm::quat shipQuat = { 0.0f, 1 * glm::sin(angle / 2.0f), 0.0f, glm::cos(angle / 2.0f) };
 		shipModel *= glm::toMat4(r);//glm::rotate(shipModel, cameraDirection.x, glm::vec3(0.0f, 1.0f, 0.0f));
 		_objects[2]->ModelViewProjection = shipModel;// *glm::translate(glm::mat4(1.0f), cameraPosition + 2.0f * cameraDirection);
 
@@ -161,7 +157,6 @@ private:
 		const auto offset = 100.5f;
 		for (u32 i = 0; i < lightCount; i++)
 		{
-			auto model = glm::mat4(1.0f);
 			// 1. translation: displace along circle with 'radius' in range [-offset, offset]
 			const auto angle = static_cast<float>(i) / static_cast<float>(lightCount) * 360.0f;
 			auto displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;

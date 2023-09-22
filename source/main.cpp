@@ -213,8 +213,6 @@ void Update(const float deltaTime)
 
     const auto pos = glm::vec3(transform.p.x, transform.p.y, transform.p.z);
     const auto quat = glm::quat(transform.q.w, transform.q.x, transform.q.y, transform.q.z);
-    
-    auto euler = glm::eulerAngles(quat);
 
     auto viewMatrix = glm::translate(glm::mat4(1.0f), pos) * glm::toMat4(quat);
 
