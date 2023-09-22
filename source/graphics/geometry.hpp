@@ -27,8 +27,8 @@ class Geometry final
 {
 public:
 	static Geometry* CreateEmpty();
-	static Geometry* CreateCube(const f32 width, const f32 height, const f32 depth);
-	static Geometry* CreatePlane(const f32 width, const f32 height);
+	static Geometry* CreateUnitCube();
+	static Geometry* CreateUnitPlane();
 	static Geometry* CreatePlainFromFile(const std::filesystem::path& filePath);
 	static Geometry* CreateFromFile(const std::filesystem::path& filePath);
 
@@ -94,8 +94,6 @@ private:
 		{
 			return std::make_pair(4, GL_FLOAT);
 		}
-
-		throw std::runtime_error("GL: Unsupported type");
 	}
 
 	template <typename T>

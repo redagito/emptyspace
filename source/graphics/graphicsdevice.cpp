@@ -13,9 +13,9 @@ void APIENTRY DebugCallback(
     const u32 type,
     const u32 id,
     const u32 severity,
-    s32 length,
+    s32 /*length*/,
     const GLchar* message,
-    const void* userParam)
+    const void* /*userParam*/)
 {
     if (id == 131185)
     {

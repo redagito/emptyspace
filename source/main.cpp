@@ -137,7 +137,7 @@ void Cleanup()
     delete g_PhysicsScene;
 }
 
-void HandleInput(const f32 deltaTime)
+void HandleInput(const f32 /*deltaTime*/)
 {
     if (glfwGetKey(g_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
@@ -233,14 +233,14 @@ void Update(const float deltaTime)
     g_Camera_View = viewMatrix;
 }
 
-void WindowOnFramebufferResized(GLFWwindow* window, const int width, const int height)
+void WindowOnFramebufferResized(GLFWwindow* /*window*/, const int width, const int height)
 {
     //g_Window_Width = width;
     //g_Window_Height = height;
     glViewport(0, 0, width, height);
 }
 
-void WindowOnMouseMove(GLFWwindow* window, const double xPos, const double yPos)
+void WindowOnMouseMove(GLFWwindow* /*window*/, const double xPos, const double yPos)
 {
     if (g_PhysicsScene != nullptr)
     {
@@ -377,7 +377,7 @@ void RenderLights(
     const Texture& gBufferDepth,
     const glm::mat4& cameraProjection,
     const glm::vec3& cameraPosition,
-    const glm::vec3& cameraDirection,
+    const glm::vec3& /*cameraDirection*/,
     int& visibleLights)
 {
     constexpr std::string_view renderLightBufferDebugGroup = "Render LBuffer";
@@ -498,7 +498,7 @@ void RenderEmission(const Texture& lightBufferTexture, const Texture& emissionTe
     glPopDebugGroup();
 }
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char** /*argv*/)
 {
     if (!glfwInit())
     {
@@ -566,9 +566,9 @@ int main(int argc, char* argv[])
         });
 
     g_EmptyGeometry = Geometry::CreateEmpty();
-    g_CubeGeometry = Geometry::CreateCube(1, 1, 1);
+    g_CubeGeometry = Geometry::CreateUnitCube();
     //g_CubeGeometry = Geometry::CreateFromFile("data/models/SM_Cube.fbx");
-    g_PlaneGeometry = Geometry::CreatePlane(3, 3);
+    g_PlaneGeometry = Geometry::CreateUnitPlane();
     g_ShipGeometry = Geometry::CreateFromFile("data/models/SM_ShipA_noWindshield.obj");
     g_PointLightGeometry = Geometry::CreateFromFile("data/models/SM_PointLight.obj");
         
@@ -599,18 +599,9 @@ int main(int argc, char* argv[])
 
     /* uniforms */
     constexpr auto kUniformProjectionMatrix = 0;
-    constexpr auto kUniformCameraPosition = 0;
-    constexpr auto kUniformCameraDirection = 0;
     constexpr auto kUniformViewMatrix = 1;
-    constexpr auto kUniformFieldOfView = 1;
-    constexpr auto kUniformAspectRatio = 2;
-    constexpr auto kUniformModel = 2;
-    constexpr auto kUniformLight = 3;
     constexpr auto kUniformMotionBlurVelocityScale = 0;
     constexpr auto kUniformMotionBlurUvDiff = 3;
-    constexpr auto kUniformModelViewProjection = 3;
-    constexpr auto kUniformModelViewProjectionInverse = 4;
-    constexpr auto kUniformMotionBlurExcept = 5;
 
     constexpr auto fieldOfView = glm::radians(60.0f);
     auto const cameraProjectionMatrix = glm::perspective(fieldOfView, static_cast<f32>(windowWidth) / static_cast<f32>(windowHeight), 0.1f, 1000.0f);
@@ -641,8 +632,6 @@ int main(int argc, char* argv[])
     glfwSetInputMode(g_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glViewport(0, 0, frameWidth, frameHeight);
-
-    Material* currentMaterial = nullptr;
     
     while (!glfwWindowShouldClose(g_Window))
     {

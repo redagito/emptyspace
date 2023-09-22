@@ -1,8 +1,11 @@
 #pragma once
 
+#include <vector>
+
 #include "types.hpp"
 #include "camera.hpp"
 #include "graphics/light.hpp"
+#include "scenes/scenenode.hpp"
 
 class Material;
 struct SceneObject;
@@ -45,11 +48,11 @@ public:
     }
 
 protected:
-    virtual void InternalDraw(f32 deltaTime)
+    virtual void InternalDraw(f32 /*deltaTime*/)
     {
     }
 
-    virtual void InternalUpdate(f32 deltaTime, const Camera& camera)
+    virtual void InternalUpdate(f32 /*deltaTime*/, const Camera& /*camera*/)
     {
     }
 

@@ -52,9 +52,10 @@ target_include_directories(${PROJECT_NAME}
 	PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/source
 )
 
-#target_compile_options(${PROJECT_NAME} PRIVATE
-#  $<$<CXX_COMPILER_ID:MSVC>:/WX /W2>
-#  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
-#)
+target_compile_options(${PROJECT_NAME} PRIVATE
+  $<$<CXX_COMPILER_ID:MSVC>:/WX /W4>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall>
+  # -Wextra -Wpedantic -Werror
+)
 
 file (COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

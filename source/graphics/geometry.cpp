@@ -7,7 +7,7 @@ Geometry* Geometry::CreateEmpty()
     return new Geometry();
 }
 
-Geometry* Geometry::CreateCube(const f32 width, const f32 height, const f32 depth)
+Geometry* Geometry::CreateUnitCube()
 {
     auto meshData = new MeshData();
     meshData->AddPositionNormalUv(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 0.0f));
@@ -54,7 +54,7 @@ Geometry* Geometry::CreateCube(const f32 width, const f32 height, const f32 dept
     return meshData->BuildGeometry<VertexPositionNormalUvwTangent>();
 }
 
-Geometry* Geometry::CreatePlane(const f32 width, const f32 height)
+Geometry* Geometry::CreateUnitPlane()
 {
     auto meshData = new MeshData();
     meshData->AddPositionNormalUv(glm::vec3(-0.5f, 0.0f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f));

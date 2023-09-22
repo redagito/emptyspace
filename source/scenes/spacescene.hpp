@@ -76,12 +76,13 @@ protected:
 		_bufferAsteroids = new Buffer(asteroidInstances);
 	}
 
-	void InternalDraw(f32 deltaTime) override
+	void InternalDraw(f32 /*deltaTime*/) override
 	{
 	}
 
-	void InternalUpdate(f32 deltaTime, const Camera& camera) override
+	void InternalUpdate(f32 /*deltaTime*/, const Camera& camera) override
 	{
+		// TODO Framerate dependent?
 		/* Cube orbit */
 		static auto cubeSpeed = 0.125f;
 		static auto orbitProgression = 0.0f;
