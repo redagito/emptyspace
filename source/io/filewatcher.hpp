@@ -16,9 +16,9 @@ public:
     std::chrono::duration<int, std::milli> Delay;
 
     FileWatcher(std::string pathToWatch, std::chrono::duration<int, std::milli> delay)
-    : PathToWatch{std::move(pathToWatch)}, Delay{delay}
+    : PathToWatch{pathToWatch}, Delay{delay}
 {
-        for (auto& file : std::filesystem::recursive_directory_iterator(pathToWatch))
+        for (auto& file : std::filesystem::recursive_directory_iterator(PathToWatch))
         {
             _paths[file.path().string()] = std::filesystem::last_write_time(file);
         }
