@@ -2,6 +2,7 @@
 
 #include "types.hpp"
 #include "graphics/vertexformats.hpp"
+#include "graphics/geometry.hpp"
 
 #include <filesystem>
 #include <vector>
@@ -9,7 +10,6 @@
 #include <glm/glm.hpp>
 
 class Buffer;
-class Geometry;
 
 class MeshData
 {
