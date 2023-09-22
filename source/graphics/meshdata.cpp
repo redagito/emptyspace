@@ -184,7 +184,7 @@ void MeshData::CalculateTangents()
         normal = glm::normalize(normal);
     }
 
-    for (auto i = 0; i < _positions.size(); i += 3)
+    for (size_t i = 0; i < _positions.size(); i += 3)
     {
         if (i >= _positions.size() || i + 1 >= _positions.size() || i + 2 >= _positions.size())
         {

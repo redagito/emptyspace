@@ -48,7 +48,7 @@ public:
 		if constexpr (std::is_same_v<TVertex, VertexPosition>)
 		{
 			_vertexType = VertexType::Position;
-			for (auto i = 0; i < _positions.size(); i++)
+			for (size_t i = 0; i < _positions.size(); i++)
 			{
 				vertices.emplace_back(_positions[i]);
 			}
@@ -57,7 +57,7 @@ public:
 		if constexpr (std::is_same_v<TVertex, VertexPositionColorNormalUv>)
 		{
 			_vertexType = VertexType::PositionColorNormalUv;
-			for (auto i = 0; i < _positions.size(); i++)
+			for (size_t i = 0; i < _positions.size(); i++)
 			{
 				vertices.emplace_back(_positions[i], _colors[i], _normals[i], _uvs[i]);
 			}
@@ -66,7 +66,7 @@ public:
 		if constexpr (std::is_same_v<TVertex, VertexPositionNormal>)
 		{
 			_vertexType = VertexType::PositionNormal;
-			for (auto i = 0; i < _positions.size(); i++)
+			for (size_t i = 0; i < _positions.size(); i++)
 			{
 				vertices.emplace_back(_positions[i], _normals[i]);
 			}
@@ -75,7 +75,7 @@ public:
 		if constexpr (std::is_same_v<TVertex, VertexPositionNormalUv>)
 		{
 			_vertexType = VertexType::PositionNormalUv;
-			for (auto i = 0; i < _positions.size(); i++)
+			for (size_t i = 0; i < _positions.size(); i++)
 			{
 				vertices.emplace_back(_positions[i], _normals[i], _uvs[i]);
 			}
@@ -84,7 +84,7 @@ public:
 		if constexpr (std::is_same_v<TVertex, VertexPositionNormalUvTangent>)
 		{
 			_vertexType = VertexType::PositionNormalUvTangent;
-			for (auto i = 0; i < _positions.size(); i++)
+			for (size_t i = 0; i < _positions.size(); i++)
 			{
 				vertices.emplace_back(_positions[i], _normals[i], _uvs[i], _realTangents[i]);
 			}
@@ -93,7 +93,7 @@ public:
 		if constexpr (std::is_same_v<TVertex, VertexPositionNormalUvw>)
 		{
 			_vertexType = VertexType::PositionNormalUvw;
-			for (auto i = 0; i < _positions.size(); i++)
+			for (size_t i = 0; i < _positions.size(); i++)
 			{
 				vertices.emplace_back(_positions[i], _normals[i], _uvws[i]);
 			}
@@ -102,7 +102,7 @@ public:
 		if constexpr (std::is_same_v<TVertex, VertexPositionNormalUvwTangent>)
 		{
 			_vertexType = VertexType::PositionNormalUvwTangent;
-			for (auto i = 0; i < _positions.size(); i++)
+			for (size_t i = 0; i < _positions.size(); i++)
 			{
 				vertices.emplace_back(_positions[i], _normals[i], _uvws[i], _realTangents[i]);
 			}

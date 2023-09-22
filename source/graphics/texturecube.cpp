@@ -23,7 +23,7 @@ TextureCube* TextureCube::FromFiles(const std::array<std::string_view, 6>& fileP
         }
     }();
 
-    for (auto i = 0; i < 6; i++)
+    for (size_t i = 0; i < 6; i++)
     {
         faces[i] = stbi_load(filePaths[i].data(), &width, &height, &components, comp);
     }
@@ -42,11 +42,11 @@ TextureCube::TextureCube(const u32 internalFormat, const u32 format, const s32 w
     glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &_id);
     glTextureStorage2D(_id, 1, internalFormat, width, height);
 
-    for (auto i = 0; i < 6; ++i)
+    for (size_t i = 0; i < 6; ++i)
     {
         if (data[i])
         {
-            glTextureSubImage3D(_id, 0, 0, 0, i, width, height, 1, format, GL_UNSIGNED_BYTE, data[i]);
+            glTextureSubImage3D(_id, 0, 0, 0, (GLint)i, width, height, 1, format, GL_UNSIGNED_BYTE, data[i]);
         }
     }
 
