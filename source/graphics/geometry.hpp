@@ -40,7 +40,7 @@ public:
 		glCreateVertexArrays(1, &_vao);
 #ifdef _DEBUG
 		char label[64];
-		sprintf_s(label, "VAO_%s", _names[vertexType].c_str());
+		snprintf(label, sizeof(label), "VAO_%s", _names[vertexType].c_str());
 		glObjectLabel(0x8074, _vao, static_cast<GLsizei>(strlen(label)), label); // 0x8074 = GL_VERTEX_ARRAY
 #endif
 		glVertexArrayVertexBuffer(_vao, 0, vertexBuffer.Id(), 0, vertexBuffer.Stride());
