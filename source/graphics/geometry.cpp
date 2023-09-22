@@ -77,7 +77,7 @@ Geometry* Geometry::CreatePlainFromFile(const std::filesystem::path& filePath)
 Geometry* Geometry::CreateFromFile(const std::filesystem::path& filePath)
 {
     auto meshData = MeshData::FromFile(filePath);
-    switch (meshData->VertexType())
+    switch (meshData->GetVertexType())
     {
         case VertexType::Position: return meshData->BuildGeometry<VertexPosition>();
         case VertexType::PositionColorNormalUv: return meshData->BuildGeometry<VertexPositionColorNormalUv>();

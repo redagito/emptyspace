@@ -157,7 +157,7 @@ void MeshData::AddFace(const u32 index0, const u32 index1, const u32 index2)
     _indices.emplace_back(index2);
 }
 
-[[nodiscard]] VertexType MeshData::VertexType() const
+[[nodiscard]] VertexType MeshData::GetVertexType() const
 {
     return _vertexType;
 }

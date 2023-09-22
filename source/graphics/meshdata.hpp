@@ -18,7 +18,7 @@ public:
 
 	MeshData();
 
-	[[nodiscard]] VertexType VertexType() const;
+	[[nodiscard]] VertexType GetVertexType() const;
 	[[nodiscard]] u32 IndexCount() const;
 	[[nodiscard]] u32 VertexCount() const;
 
