@@ -1,5 +1,7 @@
 #include "graphics/texturecube.hpp"
+
 #include <stdexcept>
+#include <cstring>
 
 TextureCube* TextureCube::FromFiles(const std::array<std::string_view, 6>& filePaths, u32 comp)
 {
