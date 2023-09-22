@@ -60,7 +60,6 @@ void APIENTRY DebugCallback(
     {
     case GL_DEBUG_TYPE_ERROR:
         str << "ERROR";
-        __debugbreak();
         break;
     case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
         str << "DEPRECATED_BEHAVIOR";
@@ -96,7 +95,7 @@ void APIENTRY DebugCallback(
     switch (severity)
     {
     case GL_DEBUG_SEVERITY_NOTIFICATION:
-        //str << "NOTIFICATION";
+        str << "NOTIFICATION";
         break;
     case GL_DEBUG_SEVERITY_LOW:
         str << "LOW";

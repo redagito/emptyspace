@@ -84,11 +84,8 @@ Geometry* Geometry::CreateFromFile(const std::filesystem::path& filePath)
         case VertexType::PositionNormal: return meshData->BuildGeometry<VertexPositionNormal>();
         case VertexType::PositionNormalUv: return meshData->BuildGeometry<VertexPositionNormalUv>();
         case VertexType::PositionNormalUvTangent: return meshData->BuildGeometry<VertexPositionNormalUvTangent>();
-        default: __debugbreak(); break;
+        default: throw std::runtime_error("Invalid vertex type");
     }
-
-    __debugbreak();
-    return nullptr;
 }
 
 void Geometry::Bind() const

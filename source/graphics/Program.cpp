@@ -62,6 +62,5 @@ void Program::ValidateProgram(const u32 shader, const std::string_view filename)
         std::ostringstream message;
         message << "SHADER: " << filename << " contains error(s):\n\n" << compilerLog.data() << '\n';
         std::cout << message.str();
-        __debugbreak();
     }
 }
