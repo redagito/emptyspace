@@ -1,8 +1,8 @@
-#include <emptyspace/graphics/graphicsdevice.hpp>
-#include <emptyspace/graphics/textures.hpp>
-#include <emptyspace/graphics/texturecube.hpp>
-#include <emptyspace/graphics/framebuffer.hpp>
-#include <emptyspace/graphics/program.hpp>
+#include "graphics/graphicsdevice.hpp"
+#include "graphics/textures.hpp"
+#include "graphics/texturecube.hpp"
+#include "graphics/framebuffer.hpp"
+#include "graphics/program.hpp"
 
 #include <sstream>
 #include <iostream>

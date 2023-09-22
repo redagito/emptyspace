@@ -39,6 +39,7 @@ External dependencies
 ## Building
 
 Conan install for debug and release build types
+This step may take a while due to PhysX
 ```
 conan install . --build=missing --settings=build_type=Debug && conan install . --build=missing --settings=build_type=Release
 ```

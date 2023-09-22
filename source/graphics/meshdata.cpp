@@ -1,7 +1,7 @@
-#include <emptyspace/types.hpp>
-#include <emptyspace/graphics/buffer.hpp>
-#include <emptyspace/graphics/meshdata.hpp>
-#include <emptyspace/graphics/geometry.hpp>
+#include "types.hpp"
+#include "graphics/buffer.hpp"
+#include "graphics/meshdata.hpp"
+#include "graphics/geometry.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>

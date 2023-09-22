@@ -1,6 +1,6 @@
 #define NOMINMAX
-#include <emptyspace/graphics/geometry.hpp>
-#include <emptyspace/graphics/meshdata.hpp>
+#include "graphics/geometry.hpp"
+#include "graphics/meshdata.hpp"
 
 Geometry* Geometry::CreateEmpty()
 {

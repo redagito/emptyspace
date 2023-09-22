@@ -1,8 +1,8 @@
 #pragma once
 
-#include <emptyspace/types.hpp>
-#include <emptyspace/camera.hpp>
-#include <emptyspace/graphics/light.hpp>
+#include "types.hpp"
+#include "camera.hpp"
+#include "graphics/light.hpp"
 
 class Material;
 struct SceneObject;

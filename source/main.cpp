@@ -1,20 +1,21 @@
 #define NOMINMAX
-#include <emptyspace/graphics/geometry.hpp>
-#include <emptyspace/graphics/graphicsdevice.hpp>
-#include <emptyspace/graphics/material.hpp>
-#include <emptyspace/graphics/program.hpp>
-#include <emptyspace/graphics/texturecube.hpp>
-#include <emptyspace/graphics/textures.hpp>
-#include <emptyspace/graphics/light.hpp>
-#include <emptyspace/graphics/framebuffer.hpp>
-#include <emptyspace/graphics/meshdata.hpp>
-#include <emptyspace/io/filewatcher.hpp>
-#include <emptyspace/math/frustum.hpp>
-#include <emptyspace/physics.hpp>
-#include <emptyspace/scenes/scenenode.hpp>
-#include <emptyspace/scenes/spacescene.hpp>
-#include <emptyspace/types.hpp>
-#include <emptyspace/camera.hpp>
+
+#include "graphics/geometry.hpp"
+#include "graphics/graphicsdevice.hpp"
+#include "graphics/material.hpp"
+#include "graphics/program.hpp"
+#include "graphics/texturecube.hpp"
+#include "graphics/textures.hpp"
+#include "graphics/light.hpp"
+#include "graphics/framebuffer.hpp"
+#include "graphics/meshdata.hpp"
+#include "io/filewatcher.hpp"
+#include "math/frustum.hpp"
+#include "physics.hpp"
+#include "scenes/scenenode.hpp"
+#include "scenes/spacescene.hpp"
+#include "types.hpp"
+#include "camera.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -265,7 +266,7 @@ GLFWwindow* CreateMainWindow(
     const std::string_view title)
 {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #if _DEBUG
@@ -556,45 +557,45 @@ int main(int argc, char* argv[])
     g_TransitionFramebuffer = graphicsDevice->CreateFramebuffer("FB_Transition", { g_TransitionTexture });
 
     g_SkyboxTextureCube = graphicsDevice->CreateTextureCubeFromFiles({
-    "./res/textures/TC_SkySpace_Xn.png",
-    "./res/textures/TC_SkySpace_Xp.png",
-    "./res/textures/TC_SkySpace_Yn.png",
-    "./res/textures/TC_SkySpace_Yp.png",
-    "./res/textures/TC_SkySpace_Zn.png",
-    "./res/textures/TC_SkySpace_Zp.png"
+    "data/textures/TC_SkySpace_Xn.png",
+    "data/textures/TC_SkySpace_Xp.png",
+    "data/textures/TC_SkySpace_Yn.png",
+    "data/textures/TC_SkySpace_Yp.png",
+    "data/textures/TC_SkySpace_Zn.png",
+    "data/textures/TC_SkySpace_Zp.png"
         });
 
     g_EmptyGeometry = Geometry::CreateEmpty();
     g_CubeGeometry = Geometry::CreateCube(1, 1, 1);
-    //g_CubeGeometry = Geometry::CreateFromFile("./res/models/SM_Cube.fbx");
+    //g_CubeGeometry = Geometry::CreateFromFile("data/models/SM_Cube.fbx");
     g_PlaneGeometry = Geometry::CreatePlane(3, 3);
-    g_ShipGeometry = Geometry::CreateFromFile("./res/models/SM_ShipA_noWindshield.obj");
-    g_PointLightGeometry = Geometry::CreateFromFile("./res/models/SM_PointLight.obj");
+    g_ShipGeometry = Geometry::CreateFromFile("data/models/SM_ShipA_noWindshield.obj");
+    g_PointLightGeometry = Geometry::CreateFromFile("data/models/SM_PointLight.obj");
         
     g_FinalProgram = graphicsDevice->CreateProgramFromFiles(
         "PP_Final",
-        "../../emptyspace/res/shaders/main.vert.glsl",
-        "../../emptyspace/res/shaders/main.frag.glsl");
+        "data/shaders/main.vert.glsl",
+        "data/shaders/main.frag.glsl");
     g_GeometryProgram = graphicsDevice->CreateProgramFromFiles(
         "PP_Geometry",
-        "../../emptyspace/res/shaders/gbuffer.vert.glsl",
-        "../../emptyspace/res/shaders/gbuffer.frag.glsl");
+        "data/shaders/gbuffer.vert.glsl",
+        "data/shaders/gbuffer.frag.glsl");
     g_MotionBlurProgram = graphicsDevice->CreateProgramFromFiles(
         "PP_MotionBlur",
-        "../../emptyspace/res/shaders/motionblur.vert.glsl",
-        "../../emptyspace/res/shaders/motionblur.frag.glsl");
+        "data/shaders/motionblur.vert.glsl",
+        "data/shaders/motionblur.frag.glsl");
     g_LightProgram = graphicsDevice->CreateProgramFromFiles(
         "PP_Light",
-        "../../emptyspace/res/shaders/light.vert.glsl",
-        "../../emptyspace/res/shaders/light.frag.glsl");
+        "data/shaders/light.vert.glsl",
+        "data/shaders/light.frag.glsl");
     g_QuadProgram = graphicsDevice->CreateProgramFromFiles(
         "PP_FSQ",
-        "../../emptyspace/res/shaders/quad.vert.glsl",
-        "../../emptyspace/res/shaders/quad.frag.glsl");
+        "data/shaders/quad.vert.glsl",
+        "data/shaders/quad.frag.glsl");
     g_EmissionProgram = graphicsDevice->CreateProgramFromFiles(
         "PP_Emission",
-        "../../emptyspace/res/shaders/emission.vert.glsl",
-        "../../emptyspace/res/shaders/emission.frag.glsl");
+        "data/shaders/emission.vert.glsl",
+        "data/shaders/emission.frag.glsl");
 
     /* uniforms */
     constexpr auto kUniformProjectionMatrix = 0;

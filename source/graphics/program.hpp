@@ -1,10 +1,10 @@
 #pragma once
-#include <emptyspace/types.hpp>
-#include <emptyspace/io/file.hpp>
+#include "types.hpp"
+#include "io/file.hpp"
 
 #include <glad/glad.h>
-#include <glm/mat4x4.hpp>
-#include <glm/ext/quaternion_float.hpp>
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <array>

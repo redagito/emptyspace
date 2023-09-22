@@ -1,4 +1,4 @@
-#include <emptyspace/graphics/buffer.hpp>
+#include "graphics/buffer.hpp"
 
 Buffer::Buffer()
 {

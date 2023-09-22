@@ -1,5 +1,5 @@
-#include <emptyspace/graphics/framebuffer.hpp>
-#include <emptyspace/graphics/textures.hpp>
+#include "graphics/framebuffer.hpp"
+#include "graphics/textures.hpp"
 
 #include <glad/glad.h>
 #include <array>

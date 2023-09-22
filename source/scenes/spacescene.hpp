@@ -1,10 +1,10 @@
 #pragma once
 
-#include <emptyspace/graphics/geometry.hpp>
-#include <emptyspace/graphics/graphicsdevice.hpp>
-#include <emptyspace/graphics/program.hpp>
-#include <emptyspace/graphics/textures.hpp>
-#include <emptyspace/scenes/scene.hpp>
+#include "graphics/geometry.hpp"
+#include "graphics/graphicsdevice.hpp"
+#include "graphics/program.hpp"
+#include "graphics/textures.hpp"
+#include "scenes/scene.hpp"
 
 #include <GLFW/glfw3.h>
 #include <glm/gtx/quaternion.hpp>
@@ -65,9 +65,9 @@ protected:
     
     void InitializeTextures()
     {
-        _textureCubeDiffuse = _graphicsDevice.CreateTextureFromFile("./res/textures/T_PlasticMesh_D.jpg", STBI_rgb);
-        _textureCubeSpecular = _graphicsDevice.CreateTextureFromFile("./res/textures/T_PlasticMesh_S.jpg", STBI_grey);
-        _textureCubeNormal = _graphicsDevice.CreateTextureFromFile("./res/textures/T_PlasticMesh_N.jpg", STBI_rgb);
+        _textureCubeDiffuse = _graphicsDevice.CreateTextureFromFile("data/textures/T_PlasticMesh_D.jpg", STBI_rgb);
+        _textureCubeSpecular = _graphicsDevice.CreateTextureFromFile("data/textures/T_PlasticMesh_S.jpg", STBI_grey);
+        _textureCubeNormal = _graphicsDevice.CreateTextureFromFile("data/textures/T_PlasticMesh_N.jpg", STBI_rgb);
 
         _defaultMaterial = new Material(_textureCubeDiffuse, _textureCubeNormal, _textureCubeSpecular);
 

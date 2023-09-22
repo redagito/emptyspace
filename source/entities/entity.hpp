@@ -1,6 +1,6 @@
 #pragma once
-#include <emptyspace/types.hpp>
-#include <emptyspace/noncopyable.hpp>
+#include "types.hpp"
+#include "noncopyable.hpp"
 
 class Entity final : public NonCopyable
 {

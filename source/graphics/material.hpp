@@ -1,8 +1,8 @@
 #pragma once
 
-#include <emptyspace/graphics/textures.hpp>
+#include "graphics/textures.hpp"
 
-#include <glm/vec3.hpp>
+#include <glm/glm.hpp>
 
 class Texture;
 

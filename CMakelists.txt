@@ -14,7 +14,7 @@ endif()
 
 find_package(assimp REQUIRED)
 find_package(glad REQUIRED)
-find_package(glfw REQUIRED)
+find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 find_package(physx REQUIRED)
 find_package(stb REQUIRED)
@@ -38,19 +38,26 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC assimp::assimp
-    PUBLIC glad::glad
-    PUBLIC glfw::glfw
-    PUBLIC glm::glm
-    PUBLIC physx::physx
-    PUBLIC stb::stb
-    PUBLIC fmtlog::fmtlog
-    PUBLIC OpenGL::GL
+    PRIVATE assimp::assimp
+    PRIVATE glad::glad
+    PRIVATE glfw
+    PRIVATE glm::glm
+	PRIVATE PhysX::PhysX
+    PRIVATE PhysX::PhysXFoundation
+    PRIVATE PhysX::PhysXCommon
+    PRIVATE PhysX::PhysXPvdSDK
+    PRIVATE PhysX::PhysXCooking
+    PRIVATE PhysX::PhysXExtensions
+    PRIVATE PhysX::PhysXCharacterKinematic
+    PRIVATE PhysX::PhysXVehicle
+
+    PRIVATE stb::stb
+    PRIVATE fmtlog::fmtlog
+    PRIVATE OpenGL::GL
 )
 
 target_include_directories(${PROJECT_NAME} 
 	PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/source
-	PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 #target_compile_options(${PROJECT_NAME} PRIVATE

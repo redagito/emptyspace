@@ -1,6 +1,6 @@
 #pragma once
 
-#include <emptyspace/types.hpp>
+#include "types.hpp"
 
 #include <glad/glad.h>
 #include <stb_image.h>

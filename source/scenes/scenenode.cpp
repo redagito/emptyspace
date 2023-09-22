@@ -1,4 +1,4 @@
-#include <emptyspace/scenes/scenenode.hpp>
+#include "scenes/scenenode.hpp"
 
 #include <algorithm>
 

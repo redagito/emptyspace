@@ -2,7 +2,7 @@
 
 #include <glm/mat4x4.hpp>
 #include <vector>
-#include "emptyspace/types.hpp"
+#include "types.hpp"
 
 class Material;
 

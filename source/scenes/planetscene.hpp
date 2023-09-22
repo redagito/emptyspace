@@ -1,6 +1,6 @@
 #pragma once
 
-#include <emptyspace/scenes/scene.hpp>
+#include "scenes/scene.hpp"
 
 class PlanetScene : public Scene
 {

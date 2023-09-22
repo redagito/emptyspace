@@ -1,7 +1,7 @@
 #pragma once
 
-#include <emptyspace/types.hpp>
-#include <emptyspace/graphics/textures.hpp>
+#include "types.hpp"
+#include "graphics/textures.hpp"
 
 #include <array>
 

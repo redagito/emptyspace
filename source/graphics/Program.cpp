@@ -1,4 +1,4 @@
-#include <emptyspace/graphics/program.hpp>
+#include "graphics/program.hpp"
 
 #include <iostream>
 #include <sstream>

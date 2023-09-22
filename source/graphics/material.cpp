@@ -1,4 +1,4 @@
-#include <emptyspace/graphics/material.hpp>
+#include "graphics/material.hpp"
 
 #include <glad/glad.h>
 
