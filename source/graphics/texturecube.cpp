@@ -51,7 +51,7 @@ TextureCube::TextureCube(const u32 internalFormat, const u32 format, const s32 w
     }
 
     char label[64];
-    sprintf_s(label, "TC_%dx%d %d", width, height, format);
+    snprintf(label, sizeof(label), "TC_%dx%d %d", width, height, format);
     glObjectLabel(GL_TEXTURE, _id, static_cast<GLsizei>(strlen(label)), label);
 }
 

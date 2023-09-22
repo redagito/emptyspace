@@ -662,7 +662,7 @@ int main(int argc, char* argv[])
                 sqrt(framesToAverage);
 
             char str[128];
-            sprintf_s(str, "emptyspace, frame = %.3fms +/- %.4fms, fps = %.1f, %d frames, %d visible lights, %.3f", deltaTimeAverage * 1000.0f,
+            snprintf(str, sizeof(str), "emptyspace, frame = %.3fms +/- %.4fms, fps = %.1f, %d frames, %d visible lights, %.3f", deltaTimeAverage * 1000.0f,
                 1000.0f * deltaTimeStandardError, 1.0f / deltaTimeAverage, framesToAverage, visibleLights, g_Transition_Factor.r);
             glfwSetWindowTitle(g_Window, str);
 

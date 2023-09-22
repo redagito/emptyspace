@@ -53,7 +53,7 @@ Texture::Texture(const u32 internalFormat, const u32 format, const s32 width, co
     }
 
     char label[64];
-    sprintf_s(label, "T_%dx%d_%s_%s_%s_%s", width, height, FormatToString(internalFormat), FormatToString(format), FilterToString(filter), WrapToString(wrap));
+    snprintf(label, sizeof(label), "T_%dx%d_%s_%s_%s_%s", width, height, FormatToString(internalFormat), FormatToString(format), FilterToString(filter), WrapToString(wrap));
     glObjectLabel(GL_TEXTURE, _id, static_cast<GLsizei>(strlen(label)), label);
 }
 

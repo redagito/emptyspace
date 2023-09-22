@@ -20,7 +20,7 @@ public:
         glCreateBuffers(1, &_id);
 #ifdef _DEBUG
         char label[64];
-        sprintf_s(label, "B_%s", typeid(T).name());
+        snprintf(label, sizeof(label), "B_%s", typeid(T).name());
         glObjectLabel(GL_BUFFER, _id, static_cast<GLsizei>(strlen(label)), label);
 #endif
         glNamedBufferStorage(_id, _stride * _size, data.data(), flags);
@@ -35,7 +35,7 @@ public:
         glCreateBuffers(1, &_id);
 #ifdef _DEBUG
         char label[64];
-        sprintf_s(label, "B_%s", typeid(T).name());
+        snprintf(label, sizeof(label), "B_%s", typeid(T).name());
         glObjectLabel(GL_BUFFER, _id, static_cast<GLsizei>(strlen(label)), label);
 #endif
         glBindBuffer(type, _id);
