@@ -253,7 +253,7 @@ void Renderer::RenderLights(const glm::mat4& projection, const Camera& camera)
 
 	for (auto& light : _scene->Lights())
 	{
-		if (!_frustum->SphereInFrustum(light.Position.x, light.Position.y, light.Position.z, light.Attenuation.z))
+		if (!_frustum->SphereInFrustum(light.Position.x, light.Position.y, light.Position.z, light.Attenuation))
 		{
 			continue;
 		}
@@ -261,7 +261,7 @@ void Renderer::RenderLights(const glm::mat4& projection, const Camera& camera)
 		_visibleLights++;
 
 		auto model = glm::translate(glm::mat4(1.0f), glm::vec3(light.Position));
-		model = glm::scale(model, glm::vec3(light.Attenuation.z, light.Attenuation.z, light.Attenuation.z));
+		model = glm::scale(model, glm::vec3(light.Attenuation));
 
 		_lightProgram->SetVertexShaderUniform(kUniformProjectionMatrix, projection);
 		_lightProgram->SetVertexShaderUniform(kUniformViewMatrix, camera.View);

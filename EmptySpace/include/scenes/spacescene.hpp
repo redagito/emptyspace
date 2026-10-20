@@ -57,7 +57,7 @@ protected:
 	{
 		auto lights = CreateRandomLights(50);
 		//std::vector<Light> lights;
-		lights.emplace_back(LightType::SpotLight, glm::vec3(0.0f, 8.0f, 0.0f), glm::vec3(0.6f, 1.0f, 0.0f), glm::vec3(0.022f, 0.5f, 400.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+		lights.emplace_back(LightType::SpotLight, glm::vec3(0.0f, 8.0f, 0.0f), glm::vec3(0.6f, 1.0f, 0.0f), 400.0f, glm::vec3(0.0f, -1.0f, 0.0f));
 
 		for (auto& light : lights)
 		{
@@ -174,12 +174,11 @@ private:
 
 			const auto color = glm::vec3((rand() % 256) / 256.0f, (rand() % 256) / 256.0f, (rand() % 256) / 256.0f);
 
-			// 2. scale: Scale between 0.05 and 0.25f
-			const auto scale = rand() % 60;// / 100.0f + 2.05f;
-			const auto attenuation = glm::vec3(static_cast<f32>(scale));
+			// The radius the light fades out over.
+			const auto attenuation = static_cast<f32>(rand() % 60 + 1);
 
 			// 4. now add to list of matrices
-			lights.emplace_back(LightType::PointLight, position, color, glm::vec3(0.016f, 0.04f, attenuation.r));
+			lights.emplace_back(LightType::PointLight, position, color, attenuation);
 		}
 
 		return lights;

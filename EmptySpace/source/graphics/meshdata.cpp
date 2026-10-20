@@ -7,6 +7,19 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
+namespace
+{
+	// A unit vector perpendicular to the normal, for tangents that are
+	// parallel to it.
+	glm::vec3 AnyPerpendicular(const glm::vec3& normal)
+	{
+		const auto axis = glm::abs(normal.x) < 0.9f
+			? glm::vec3(1.0f, 0.0f, 0.0f)
+			: glm::vec3(0.0f, 1.0f, 0.0f);
+		return glm::normalize(glm::cross(normal, axis));
+	}
+}
+
 MeshData* MeshData::FromFile(const std::filesystem::path& filePath)
 {
     auto meshData = new MeshData();
@@ -47,9 +60,10 @@ MeshData* MeshData::FromFile(const std::filesystem::path& filePath)
             continue;
         }
 
-        meshData->AddFace(face.mIndices[0]);
-        meshData->AddFace(face.mIndices[1]);
-        meshData->AddFace(face.mIndices[2]);
+        // The vertices are appended per face, so the indices of the triangle
+        // soup are consecutive.
+        const auto base = static_cast<u32>(meshData->VertexCount());
+        meshData->AddFace(base, base + 1, base + 2);
 
         for (u32 i = 0; i < 3; ++i)
         {
@@ -205,63 +219,57 @@ void MeshData::CalculateTangents()
         normal = glm::normalize(normal);
     }
 
-    for (size_t i = 0; i < _positions.size(); i += 3)
+    for (size_t i = 0; i + 2 < _indices.size(); i += 3)
     {
-        if (i >= _positions.size() || i + 1 >= _positions.size() || i + 2 >= _positions.size())
-        {
-            break;
-        }
-        auto triangle = glm::mat3x3();
-        triangle[0] = _positions[i + 0];
-        triangle[1] = _positions[i + 1];
-        triangle[2] = _positions[i + 2];
+        const auto i0 = _indices[i];
+        const auto i1 = _indices[i + 1];
+        const auto i2 = _indices[i + 2];
 
-        const auto uv0 = glm::vec2(_uvs[i + 1].x - _uvs[i + 0].x, _uvs[i + 2].x - _uvs[i + 0].x);
-        const auto uv1 = glm::vec2(_uvs[i + 1].y - _uvs[i + 0].y, _uvs[i + 2].y - _uvs[i + 0].y);
+        const auto edge1 = _positions[i1] - _positions[i0];
+        const auto edge2 = _positions[i2] - _positions[i0];
 
-        const auto q1 = triangle[1] - triangle[0];
-        const auto q2 = triangle[2] - triangle[0];
+        const auto uv1 = _uvs[i1] - _uvs[i0];
+        const auto uv2 = _uvs[i2] - _uvs[i0];
 
-        auto determinant = uv0.x * uv1.y - uv1.x * uv0.y;
+        const auto determinant = uv1.x * uv2.y - uv2.x * uv1.y;
         if (glm::abs(determinant) <= FLT_EPSILON)
         {
-            determinant = 0.000001f;
+            continue;
         }
 
         const auto inverseDeterminant = 1.0f / determinant;
 
-        const auto tangent = glm::vec3
-        {
-            inverseDeterminant * (uv1.y * q1.x - uv0.y * q2.x),
-            inverseDeterminant * (uv1.y * q1.y - uv0.y * q2.y),
-            inverseDeterminant * (uv1.y * q1.z - uv0.y * q2.z)
-        };
-        const auto bitangent = glm::vec3
-        {
-            inverseDeterminant * (-uv1.x * q1.x * uv0.x * q2.x),
-            inverseDeterminant * (-uv1.x * q1.y * uv0.x * q2.y),
-            inverseDeterminant * (-uv1.x * q1.z * uv0.x * q2.z)
-        };
+        const auto tangent = (uv1.y * edge1 - uv2.y * edge2) * inverseDeterminant;
+        const auto bitangent = (uv2.x * edge1 - uv1.x * edge2) * inverseDeterminant;
 
-        _tangents[i + 0] += tangent;
-        _tangents[i + 1] += tangent;
-        _tangents[i + 2] += tangent;
+        _tangents[i0] += tangent;
+        _tangents[i1] += tangent;
+        _tangents[i2] += tangent;
 
-        _bitangents[i + 0] += bitangent;
-        _bitangents[i + 1] += bitangent;
-        _bitangents[i + 2] += bitangent;
+        _bitangents[i0] += bitangent;
+        _bitangents[i1] += bitangent;
+        _bitangents[i2] += bitangent;
     }
+
+    _realTangents.clear();
+    _realTangents.reserve(_positions.size());
 
     for (size_t i = 0; i < _positions.size(); ++i)
     {
-        auto& normal = _normals[i];
-        auto& tangent = _tangents[i];
-        auto& bitangent = _bitangents[i];
+        const auto& normal = _normals[i];
+        const auto& tangent = _tangents[i];
 
-        auto realTangent = glm::normalize(tangent - (normal * glm::dot(normal, tangent)));
-        auto realBitangent = glm::dot(glm::cross(normal, tangent), bitangent) < 0.0f
+        auto orthogonal = tangent - (normal * glm::dot(normal, tangent));
+        if (glm::dot(orthogonal, orthogonal) <= FLT_EPSILON)
+        {
+            // The tangent is parallel to the normal, any perpendicular will do.
+            orthogonal = AnyPerpendicular(normal);
+        }
+
+        const auto unitTangent = glm::normalize(orthogonal);
+        const auto handedness = glm::dot(glm::cross(normal, unitTangent), _bitangents[i]) < 0.0f
             ? -1.0f
             : 1.0f;
-        _realTangents.emplace_back(realTangent, realBitangent);
+        _realTangents.emplace_back(unitTangent, handedness);
     }
 }

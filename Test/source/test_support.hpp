@@ -21,7 +21,8 @@ public:
 	void Cleanup() override;
 	void InternalUpdate(f32 /*deltaTime*/, const Camera& /*camera*/) override;
 
-	void AddLight(LightType type, const glm::vec3& position, const glm::vec3& color, f32 radius);
+	void AddLight(LightType type, const glm::vec3& position, const glm::vec3& color, f32 radius,
+		const glm::vec3& direction = glm::vec3(0.0f, 0.0f, 1.0f));
 
 private:
 	GraphicsDevice& _device;
