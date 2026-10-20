@@ -35,7 +35,7 @@ TEST_CASE("The G buffer stores the world position of a fragment")
 	REQUIRE(GLTestContext() != nullptr);
 
 	auto device = std::make_unique<GraphicsDevice>();
-	auto scene = std::make_unique<TestScene>(*device, glm::vec3(0.0f, 0.0f, -10.0f));
+	auto scene = std::make_unique<TestScene>(*device, Shape::Cube, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)));
 
 	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
 	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
@@ -56,7 +56,7 @@ TEST_CASE("The G buffer normal of a face is the normal of that face")
 	REQUIRE(GLTestContext() != nullptr);
 
 	auto device = std::make_unique<GraphicsDevice>();
-	auto scene = std::make_unique<TestScene>(*device, glm::vec3(0.0f, 0.0f, -10.0f));
+	auto scene = std::make_unique<TestScene>(*device, Shape::Cube, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)));
 
 	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
 	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
@@ -74,12 +74,44 @@ TEST_CASE("The G buffer normal of a face is the normal of that face")
 	REQUIRE(centre.z == Catch::Approx(1.0f).margin(0.05f));
 }
 
+TEST_CASE("Geometry without a tangent keeps its vertex normal")
+{
+	REQUIRE(GLTestContext() != nullptr);
+
+	// A normal map that points away from the surface. Without a tangent
+	// there is no tangent space to map it into, so the vertex normal is used.
+	const u8 normalMap[4] = { 128, 128, 0, 255 };
+
+	// The unit plane has no tangent attribute, so the normal of the face has
+	// to come from the vertex normal.
+	const auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)) *
+		glm::rotate(glm::mat4(1.0f), glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+	auto device = std::make_unique<GraphicsDevice>();
+	auto scene = std::make_unique<TestScene>(*device, Shape::Quad, model, normalMap);
+
+	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
+	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
+
+	const auto gbuffer = ReadTexture(renderer.GBufferNormal(), kSize, kSize);
+	const auto centre = PixelAt(gbuffer, kSize / 2, kSize / 2);
+
+	REQUIRE(std::isfinite(centre.x));
+	REQUIRE(std::isfinite(centre.y));
+	REQUIRE(std::isfinite(centre.z));
+
+	// The plane points along +Y, rotated by 45 degrees around the X axis.
+	REQUIRE(centre.x == Catch::Approx(0.0f).margin(0.05f));
+	REQUIRE(centre.y == Catch::Approx(0.707f).margin(0.05f));
+	REQUIRE(centre.z == Catch::Approx(0.707f).margin(0.05f));
+}
+
 TEST_CASE("A point light lights a surface in front of it")
 {
 	REQUIRE(GLTestContext() != nullptr);
 
 	auto device = std::make_unique<GraphicsDevice>();
-	auto scene = std::make_unique<TestScene>(*device, glm::vec3(0.0f, 0.0f, -10.0f));
+	auto scene = std::make_unique<TestScene>(*device, Shape::Cube, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)));
 	scene->AddLight(LightType::PointLight, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 20.0f);
 
 	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
@@ -98,7 +130,7 @@ TEST_CASE("A spot light only lights surfaces inside its cone")
 	REQUIRE(GLTestContext() != nullptr);
 
 	auto device = std::make_unique<GraphicsDevice>();
-	auto scene = std::make_unique<TestScene>(*device, glm::vec3(0.0f, 0.0f, -10.0f));
+	auto scene = std::make_unique<TestScene>(*device, Shape::Cube, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)));
 	scene->AddLight(LightType::SpotLight, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 20.0f,
 		glm::vec3(0.0f, 0.0f, 1.0f));
 

@@ -5,20 +5,20 @@
 #include <glad/glad.h>
 #include <glm/gtx/quaternion.hpp>
 
-TestScene::TestScene(GraphicsDevice& device, const glm::vec3& objectPosition)
+TestScene::TestScene(GraphicsDevice& device, const Shape shape, const glm::mat4& model, const u8* normalMap)
 	: _device{ device }
-	, _objectPosition{ objectPosition }
+	, _model{ model }
 {
 	const u8 white[4] = { 255, 255, 255, 255 };
 	const u8 flatNormal[4] = { 128, 128, 255, 255 };
 	const u8 black[4] = { 0, 0, 0, 255 };
 
 	_diffuse = _device.CreateTexture(GL_RGBA8, GL_RGBA, 1, 1, const_cast<u8*>(white), GL_NEAREST);
-	_normal = _device.CreateTexture(GL_RGBA8, GL_RGBA, 1, 1, const_cast<u8*>(flatNormal), GL_NEAREST);
+	_normal = _device.CreateTexture(GL_RGBA8, GL_RGBA, 1, 1, const_cast<u8*>(normalMap != nullptr ? normalMap : flatNormal), GL_NEAREST);
 	_specular = _device.CreateTexture(GL_RGBA8, GL_RGBA, 1, 1, const_cast<u8*>(black), GL_NEAREST);
 	_material = new Material(_diffuse, _normal, _specular);
 
-	_objects.push_back(new SceneObject(Shape::Cube, _material));
+	_objects.push_back(new SceneObject(shape, _material));
 }
 
 void TestScene::Cleanup()
@@ -31,7 +31,7 @@ void TestScene::Cleanup()
 
 void TestScene::InternalUpdate(f32 /*deltaTime*/, const Camera& /*camera*/)
 {
-	_objects[0]->ModelViewProjection = glm::translate(glm::mat4(1.0f), _objectPosition);
+	_objects[0]->ModelViewProjection = _model;
 }
 
 void TestScene::AddLight(const LightType type, const glm::vec3& position, const glm::vec3& color, const f32 radius,

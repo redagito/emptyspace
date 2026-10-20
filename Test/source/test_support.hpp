@@ -12,11 +12,12 @@
 
 #include <vector>
 
-// A scene with a single cube at a known position.
+// A scene with a single object at a known place.
 class TestScene : public Scene
 {
 public:
-	TestScene(GraphicsDevice& device, const glm::vec3& objectPosition);
+	// The normal map defaults to a flat one, pass four bytes to use another.
+	TestScene(GraphicsDevice& device, Shape shape, const glm::mat4& model, const u8* normalMap = nullptr);
 
 	void Cleanup() override;
 	void InternalUpdate(f32 /*deltaTime*/, const Camera& /*camera*/) override;
@@ -26,7 +27,7 @@ public:
 
 private:
 	GraphicsDevice& _device;
-	glm::vec3 _objectPosition;
+	glm::mat4 _model;
 
 	Texture* _diffuse{};
 	Texture* _normal{};

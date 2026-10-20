@@ -23,11 +23,17 @@ void main()
 {
     vec3 v_diffuse = texture(t_diffuse, fs_uv).rgb;
     vec3 v_specular = texture(t_specular, fs_uv).rgb;
-    vec3 v_normal = texture(t_normal, fs_uv).rgb * 2.0 - 1.0;
 
-    vec3 v_bitangent = cross(fs_normal, fs_tangent.xyz) * fs_tangent.w;
-    mat3 v_tbn = mat3(fs_tangent.xyz, v_bitangent, normalize(fs_normal));
-    v_normal = normalize(v_tbn * v_normal);
+    // The normal map is only meaningful with a tangent to build the tangent
+    // space from. Without one the vertex normal is used as it is.
+    vec3 v_normal = normalize(fs_normal);
+    if (dot(fs_tangent.xyz, fs_tangent.xyz) > 0.0)
+    {
+        const vec3 mapped = texture(t_normal, fs_uv).rgb * 2.0 - 1.0;
+        const vec3 v_bitangent = cross(fs_normal, fs_tangent.xyz) * fs_tangent.w;
+        const mat3 v_tbn = mat3(fs_tangent.xyz, v_bitangent, normalize(fs_normal));
+        v_normal = normalize(v_tbn * mapped);
+    }
     v_normal = (fs_model_matrix * vec4(v_normal, 0.0)).xyz;
 
     out_position = vec4(fs_fragment_position, v_specular.r);
