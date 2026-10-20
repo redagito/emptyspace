@@ -11,6 +11,7 @@ layout(binding = 2) uniform sampler2D t_albedo;
 layout(binding = 3) uniform sampler2D t_depth;
 layout(binding = 4) uniform samplerCube tc_skybox;
 layout(binding = 5) uniform sampler2D t_lights;
+layout(binding = 6) uniform sampler2D t_emission;
 
 layout(location = 0) uniform float u_blend_factor;
 
@@ -22,7 +23,7 @@ void main()
     const vec3 albedo = albedo_specular.rgb;
     const float specular = albedo_specular.a;
     const float depth = texture(t_depth, fs_uv).r;
-    
+
     vec4 fragmentColor = vec4(1.0);
     vec3 ambientColor = vec3(0.2);
 
@@ -36,6 +37,6 @@ void main()
     }
     else
     {
-        out_color = fragmentColor;
+        out_color = vec4(fragmentColor.xyz + texture(t_emission, fs_uv).rgb, 1.0);
     }
 }

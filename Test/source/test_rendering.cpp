@@ -106,6 +106,53 @@ TEST_CASE("Geometry without a tangent keeps its vertex normal")
 	REQUIRE(centre.z == Catch::Approx(0.707f).margin(0.05f));
 }
 
+TEST_CASE("The emission pass fills the emission buffer")
+{
+	REQUIRE(GLTestContext() != nullptr);
+
+	// A grey specular map makes the geometry emissive.
+	const u8 greySpecular[4] = { 64, 64, 64, 255 };
+
+	auto device = std::make_unique<GraphicsDevice>();
+	auto scene = std::make_unique<TestScene>(*device, Shape::Cube,
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), nullptr, greySpecular);
+	scene->AddLight(LightType::PointLight, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 12.0f);
+
+	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
+	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
+
+	const auto emission = ReadTexture(renderer.Emission(), kSize, kSize);
+	const auto centre = PixelAt(emission, kSize / 2, kSize / 2);
+
+	REQUIRE(centre.r > 0.0f);
+	REQUIRE(centre.g > 0.0f);
+	REQUIRE(centre.b > 0.0f);
+}
+
+TEST_CASE("The resolved image contains the emission")
+{
+	REQUIRE(GLTestContext() != nullptr);
+
+	const u8 greySpecular[4] = { 64, 64, 64, 255 };
+
+	auto device = std::make_unique<GraphicsDevice>();
+	auto scene = std::make_unique<TestScene>(*device, Shape::Cube,
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), nullptr, greySpecular);
+	scene->AddLight(LightType::PointLight, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 12.0f);
+
+	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
+	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
+
+	const auto lights = ReadTexture(renderer.LightBuffer(), kSize, kSize);
+	const auto lightCentre = PixelAt(lights, kSize / 2, kSize / 2);
+
+	const auto final = ReadTexture(renderer.Final(), kSize, kSize);
+	const auto finalCentre = PixelAt(final, kSize / 2, kSize / 2);
+
+	REQUIRE(lightCentre.r > 0.0f);
+	REQUIRE(finalCentre.r > lightCentre.r + 0.1f);
+}
+
 TEST_CASE("A point light lights a surface in front of it")
 {
 	REQUIRE(GLTestContext() != nullptr);

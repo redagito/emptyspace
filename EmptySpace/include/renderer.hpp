@@ -39,7 +39,8 @@ public:
 	[[nodiscard]] const Texture& GBufferNormal() const { return *_gBufferNormalTexture; }
 	[[nodiscard]] const Texture& GBufferAlbedo() const { return *_gBufferAlbedoTexture; }
 	[[nodiscard]] const Texture& LightBuffer() const { return *_lightBufferTexture; }
-	[[nodiscard]] const Texture& Emission() const { return *_emissionTexture; }
+	[[nodiscard]] const Texture& Emission() const { return *_emissionResultTexture; }
+	[[nodiscard]] const Texture& Final() const { return *_gBufferFinalTexture; }
 
 private:
 	void RenderGBuffer(const glm::mat4& projection, const glm::mat4& view);
@@ -78,6 +79,7 @@ private:
 	std::unique_ptr<Texture> _motionBlurTexture;
 	std::unique_ptr<Texture> _transitionTexture;
 	std::unique_ptr<Texture> _emissionTexture;
+	std::unique_ptr<Texture> _emissionResultTexture;
 
 	std::unique_ptr<Framebuffer> _geometryFramebuffer;
 	std::unique_ptr<Framebuffer> _emissionFramebuffer;

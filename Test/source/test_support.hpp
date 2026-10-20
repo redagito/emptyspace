@@ -16,8 +16,10 @@
 class TestScene : public Scene
 {
 public:
-	// The normal map defaults to a flat one, pass four bytes to use another.
-	TestScene(GraphicsDevice& device, Shape shape, const glm::mat4& model, const u8* normalMap = nullptr);
+	// The normal map defaults to a flat one, the specular map to a black one.
+	// Pass four bytes to use another.
+	TestScene(GraphicsDevice& device, Shape shape, const glm::mat4& model,
+		const u8* normalMap = nullptr, const u8* specularMap = nullptr);
 
 	void Cleanup() override;
 	void InternalUpdate(f32 /*deltaTime*/, const Camera& /*camera*/) override;

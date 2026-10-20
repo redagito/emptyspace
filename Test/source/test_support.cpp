@@ -5,7 +5,8 @@
 #include <glad/glad.h>
 #include <glm/gtx/quaternion.hpp>
 
-TestScene::TestScene(GraphicsDevice& device, const Shape shape, const glm::mat4& model, const u8* normalMap)
+TestScene::TestScene(GraphicsDevice& device, const Shape shape, const glm::mat4& model,
+	const u8* normalMap, const u8* specularMap)
 	: _device{ device }
 	, _model{ model }
 {
@@ -15,7 +16,7 @@ TestScene::TestScene(GraphicsDevice& device, const Shape shape, const glm::mat4&
 
 	_diffuse = _device.CreateTexture(GL_RGBA8, GL_RGBA, 1, 1, const_cast<u8*>(white), GL_NEAREST);
 	_normal = _device.CreateTexture(GL_RGBA8, GL_RGBA, 1, 1, const_cast<u8*>(normalMap != nullptr ? normalMap : flatNormal), GL_NEAREST);
-	_specular = _device.CreateTexture(GL_RGBA8, GL_RGBA, 1, 1, const_cast<u8*>(black), GL_NEAREST);
+	_specular = _device.CreateTexture(GL_RGBA8, GL_RGBA, 1, 1, const_cast<u8*>(specularMap != nullptr ? specularMap : black), GL_NEAREST);
 	_material = new Material(_diffuse, _normal, _specular);
 
 	_objects.push_back(new SceneObject(shape, _material));

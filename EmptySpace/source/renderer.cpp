@@ -68,6 +68,7 @@ Renderer::Renderer(const FrameSize& renderTarget, std::unique_ptr<Scene> scene)
 	_motionBlurTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
 	_transitionTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
 	_emissionTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGBA, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
+	_emissionResultTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
 
 	_geometryFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Geometry",
 		{
@@ -79,7 +80,7 @@ Renderer::Renderer(const FrameSize& renderTarget, std::unique_ptr<Scene> scene)
 		},
 		_gBufferDepthTexture.get()));
 	_finalFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Final", { _gBufferFinalTexture.get() }));
-	_emissionFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Emission", { _emissionTexture.get() }));
+	_emissionFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Emission", { _emissionResultTexture.get() }));
 	_motionBlurFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Motionblur", { _motionBlurTexture.get() }));
 	_lightsFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Lights", { _lightBufferTexture.get() }));
 	_transitionFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Transition", { _transitionTexture.get() }));
@@ -297,7 +298,7 @@ void Renderer::RenderEmission()
 	_emissionProgram->Bind();
 	_emissionProgram->SetFragmentShaderUniform(kUniformEmissionThreshold, 0.7f);
 
-	glDrawArraysInstancedBaseInstance(GL_TRIANGLES, 0, 6, 1, 0);
+	glDrawArraysInstancedBaseInstance(GL_TRIANGLES, 0, 3, 1, 0);
 	glPopDebugGroup();
 }
 
@@ -316,7 +317,7 @@ void Renderer::ResolveGBuffer(const Camera& camera, const f32 fieldOfView)
 	_gBufferDepthTexture->Bind(3);
 	_skyboxTextureCube->Bind(4);
 	_lightBufferTexture->Bind(5);
-	_emissionTexture->Bind(6);
+	_emissionResultTexture->Bind(6);
 
 	_emptyGeometry->Bind();
 	_finalProgram->Bind();
