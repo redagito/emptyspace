@@ -52,11 +52,11 @@ namespace
 	constexpr auto kPointLightVertexCount = 240;
 }
 
-Renderer::Renderer(const FrameSize& renderTarget)
+Renderer::Renderer(const FrameSize& renderTarget, std::unique_ptr<Scene> scene)
 	: _renderTarget{ renderTarget }
 {
 	_graphicsDevice = std::make_unique<GraphicsDevice>();
-	_scene = std::make_unique<SpaceScene>(*_graphicsDevice);
+	_scene = scene ? std::move(scene) : std::make_unique<SpaceScene>(*_graphicsDevice);
 
 	_gBufferFinalTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
 	_gBufferPositionTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
@@ -196,13 +196,13 @@ void Renderer::RenderGBuffer(const glm::mat4& projection, const glm::mat4& view)
 		switch (object->ObjectShape)
 		{
 			case Shape::Cube: _cubeGeometry->Bind(); break;
-			case Shape::CubeInstanced:
-			{
-				_cubeGeometry->Bind();
-				_scene->GetAsteroidInstanceBuffer()->BindAsStorageBuffer(0);
-				object->ExcludeFromMotionBlur = true;
-				break;
-			}
+            case Shape::CubeInstanced:
+            {
+                _cubeGeometry->Bind();
+                _scene->BindInstanceBuffer();
+                object->ExcludeFromMotionBlur = true;
+                break;
+            }
 			case Shape::Ship: _shipGeometry->Bind(); break;
 			case Shape::Quad: _planeGeometry->Bind(); break;
 		}

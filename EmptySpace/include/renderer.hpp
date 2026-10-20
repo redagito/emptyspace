@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.hpp"
+#include "scenes/scene.hpp"
 
 #include <glm/mat4x4.hpp>
 
@@ -12,7 +13,6 @@ class Frustum;
 class Geometry;
 class GraphicsDevice;
 class Program;
-class SpaceScene;
 class Texture;
 class TextureCube;
 
@@ -25,7 +25,7 @@ struct FrameSize
 class Renderer
 {
 public:
-	explicit Renderer(const FrameSize& renderTarget);
+	explicit Renderer(const FrameSize& renderTarget, std::unique_ptr<Scene> scene = nullptr);
 	~Renderer();
 
 	void Render(const Camera& camera, f32 deltaTime, const FrameSize& window);
@@ -34,6 +34,12 @@ public:
 	void SetMotionBlurEnabled(const bool enabled) { _isMotionBlurEnabled = enabled; }
 
 	[[nodiscard]] s32 VisibleLights() const { return _visibleLights; }
+
+	[[nodiscard]] const Texture& GBufferPosition() const { return *_gBufferPositionTexture; }
+	[[nodiscard]] const Texture& GBufferNormal() const { return *_gBufferNormalTexture; }
+	[[nodiscard]] const Texture& GBufferAlbedo() const { return *_gBufferAlbedoTexture; }
+	[[nodiscard]] const Texture& LightBuffer() const { return *_lightBufferTexture; }
+	[[nodiscard]] const Texture& Emission() const { return *_emissionTexture; }
 
 private:
 	void RenderGBuffer(const glm::mat4& projection, const glm::mat4& view);
@@ -47,7 +53,7 @@ private:
 	FrameSize _renderTarget{};
 
 	std::unique_ptr<GraphicsDevice> _graphicsDevice;
-	std::unique_ptr<SpaceScene> _scene;
+	std::unique_ptr<Scene> _scene;
 
 	std::unique_ptr<Program> _finalProgram;
 	std::unique_ptr<Program> _geometryProgram;

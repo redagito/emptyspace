@@ -47,10 +47,9 @@ public:
 		_objects.push_back(new SceneObject(Shape::CubeInstanced, _defaultMaterial));
 	}
 
-	// TODO(deccer): remove this
-	[[nodiscard]] Buffer* GetAsteroidInstanceBuffer() const
+	void BindInstanceBuffer() override
 	{
-		return _bufferAsteroids;
+		_bufferAsteroids->BindAsStorageBuffer(0);
 	}
 
 protected:

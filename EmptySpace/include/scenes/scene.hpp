@@ -41,6 +41,12 @@ public:
         InternalUpdate(deltaTime, camera);
     }
 
+    // Binds the per instance data the geometry shader reads. Scenes without
+    // instanced geometry do not override this.
+    virtual void BindInstanceBuffer()
+    {
+    }
+
     std::vector<Light>& Lights()
     {
         return _lights;
