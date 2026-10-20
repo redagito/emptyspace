@@ -20,7 +20,11 @@ public:
 
     virtual ~Scene()
     {
-
+        for (auto* object : _objects)
+        {
+            delete object;
+        }
+        delete RootNode;
     }
 
     virtual void Cleanup() = 0;

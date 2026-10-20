@@ -9,7 +9,7 @@
 }
 
 Program::Program(
-    const std::string_view label,
+    [[maybe_unused]] const std::string_view label,
     const std::string_view vertexShaderFilePath,
     const std::string_view fragmentShaderFilePath)
 {

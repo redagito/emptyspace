@@ -17,7 +17,10 @@ public:
 	{
 	}
 
-	~SpaceScene() override = default;
+	~SpaceScene() override
+	{
+		Cleanup();
+	}
 
 	void Cleanup() override
 	{

@@ -18,6 +18,27 @@ MeshData* MeshData::FromFile(const std::filesystem::path& filePath)
     const auto scene = importer.ReadFile(filePath.string(), importerFlags);
     const auto mesh = scene->mMeshes[0];
 
+    const auto hasNormals = mesh->HasNormals();
+    const auto hasTextureCoordinates = mesh->HasTextureCoords(0);
+    const auto hasTangents = mesh->HasTangentsAndBitangents();
+
+    if (!hasNormals)
+    {
+        meshData->_vertexType = VertexType::Position;
+    }
+    else if (!hasTextureCoordinates)
+    {
+        meshData->_vertexType = VertexType::PositionNormal;
+    }
+    else if (!hasTangents)
+    {
+        meshData->_vertexType = VertexType::PositionNormalUv;
+    }
+    else
+    {
+        meshData->_vertexType = VertexType::PositionNormalUvTangent;
+    }
+
     for (u32 f = 0; f < mesh->mNumFaces; ++f)
     {
         const auto& face = mesh->mFaces[f];
@@ -40,24 +61,24 @@ MeshData* MeshData::FromFile(const std::filesystem::path& filePath)
             position.z = mesh->mVertices[index].z;
 
             glm::vec3 normal{};
-            if (mesh->HasNormals())
+            if (hasNormals)
             {
                 normal.x = mesh->mNormals[index].x;
                 normal.y = mesh->mNormals[index].y;
                 normal.z = mesh->mNormals[index].z;
 
                 glm::vec3 uv{};
-                if (mesh->HasTextureCoords(0))
+                if (hasTextureCoordinates)
                 {
                     uv.r = mesh->mTextureCoords[0]->x;
                     uv.s = mesh->mTextureCoords[0]->y;
 
-                    if (mesh->HasTangentsAndBitangents())
+                    if (hasTangents)
                     {
                         glm::vec3 tangent{};
-                        tangent.x = mesh->mTangents[i].x;
-                        tangent.y = mesh->mTangents[i].y;
-                        tangent.z = mesh->mTangents[i].z;
+                        tangent.x = mesh->mTangents[index].x;
+                        tangent.y = mesh->mTangents[index].y;
+                        tangent.z = mesh->mTangents[index].z;
 
                         meshData->AddPositionNormalUvTangent(position, normal, uv, glm::vec4(tangent, 1.0f));
                     }
