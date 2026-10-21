@@ -2,6 +2,7 @@
 
 #include "graphics/geometry.hpp"
 #include "graphics/graphicsdevice.hpp"
+#include "graphics/material.hpp"
 #include "graphics/program.hpp"
 #include "graphics/textures.hpp"
 #include "math/ring.hpp"
@@ -91,12 +92,12 @@ protected:
 		_objects[0]->ModelViewProjection = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 1.0f, 10.0f));
 		_objects[1]->ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter) * glm::rotate(glm::mat4(1.0f), orbitProgression * cubeSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
 
-		const auto r = glm::conjugate(glm::toQuat(glm::lookAt(camera.Position, camera.Position - camera.Direction, glm::vec3(0, 1, 0))));
-
-		auto shipModel = glm::translate(glm::mat4(1.0f), camera.Position + 0.25f * camera.Direction + glm::vec3(0.25f, -0.5f, 0.0f));
-
-		shipModel *= glm::toMat4(r);//glm::rotate(shipModel, cameraDirection.x, glm::vec3(0.0f, 1.0f, 0.0f));
-		_objects[2]->ModelViewProjection = shipModel;// *glm::translate(glm::mat4(1.0f), cameraPosition + 2.0f * cameraDirection);
+		// The ship is drawn with the orientation of the camera, a little behind
+		// it and off to the side.
+		const auto shipOffset = camera.Orientation * glm::vec3(0.25f, -0.5f, 0.25f);
+		auto shipModel = glm::translate(glm::mat4(1.0f), camera.Position + shipOffset);
+		shipModel *= glm::mat4_cast(camera.Orientation);
+		_objects[2]->ModelViewProjection = shipModel;
 
 		const auto objectCount = _objects.size();
 		for (std::size_t i = 3; i < objectCount; i++)
