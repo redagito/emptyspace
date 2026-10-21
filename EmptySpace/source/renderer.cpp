@@ -49,6 +49,9 @@ namespace
 
 	constexpr auto kUniformEmission = 0;
 
+	// How fast the transition effect fades out, in units per second.
+	constexpr auto kTransitionRate = 1.0f;
+
 	constexpr auto kFieldOfView = glm::radians(60.0f);
 	constexpr auto kAsteroidInstanceCount = 5000;
 	constexpr auto kPointLightVertexCount = 240;
@@ -168,7 +171,8 @@ void Renderer::Render(const Camera& camera, const f32 deltaTime, const FrameSize
 {
 	if (_isTransitionEffectEnabled)
 	{
-		_transitionFactor.w += 0.01f;
+		// The transition takes a second, whatever the frame rate is.
+		_transitionFactor.w += deltaTime * kTransitionRate;
 		if (_transitionFactor.w >= 1.0f)
 		{
 			_isTransitionEffectEnabled = false;

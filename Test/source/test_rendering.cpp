@@ -269,6 +269,37 @@ TEST_CASE("The specular map of the material scales the highlight")
 	REQUIRE(whiteCentre.r == Catch::Approx(1.05f).margin(0.01f));
 }
 
+TEST_CASE("The transition takes the same time whatever the frame rate is")
+{
+	REQUIRE(GLTestContext() != nullptr);
+
+	const auto render = [](const int frames, const f32 deltaTime)
+	{
+		auto device = std::make_unique<GraphicsDevice>();
+		auto scene = std::make_unique<TestScene>(*device, Shape::Cube,
+			glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)));
+		// The surface has to be lit, otherwise the transition fades black to
+		// black and there is nothing to compare.
+		scene->AddLight(LightType::PointLight, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 20.0f);
+
+		Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
+		renderer.SetTransitionEffectEnabled(true);
+		for (int i = 0; i < frames; ++i)
+		{
+			renderer.Render(CameraAtOrigin(), deltaTime, FrameSize{ kSize, kSize });
+		}
+
+		return ReadTexture(renderer.Final(), kSize, kSize);
+	};
+
+	// Half a second of transition at 30 and at 60 frames per second has to
+	// fade the image by the same amount.
+	const auto at30 = render(15, 1.0f / 30.0f);
+	const auto at60 = render(30, 1.0f / 60.0f);
+
+	REQUIRE(at30 == at60);
+}
+
 TEST_CASE("A point light lights a surface in front of it")
 {
 	REQUIRE(GLTestContext() != nullptr);
