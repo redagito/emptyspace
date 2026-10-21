@@ -1,7 +1,9 @@
 #include "physics.hpp"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
+#include <cmath>
 #include <iostream>
 
 using namespace physx;
@@ -44,7 +46,7 @@ PhysicsScene::PhysicsScene()
 		PxTransform(PxVec3(0.0f)),
 		Camera,
 
-		// Attachment point of the "ship" 
+		// Attachment point of the "ship"
 		PxTransform(PxVec3(0.0f, 0.0f, 0.0f)));
 
 	// Affect position and orientation
@@ -65,7 +67,7 @@ PhysicsScene::PhysicsScene()
 	Booster->setDrive(PxD6Drive::eSWING, PxD6JointDrive(stiffness, damping, FLT_MAX, true));
 
 	Booster->setDrivePosition(PxTransform(PxVec3(0.0f)));
-	Booster->setDriveVelocity(PxVec3(0.0f), PxVec3(PxZero));
+	Booster->setDriveVelocity(PxVec3(0.0f), PxZero);
 
 	_scene->addActor(*World);
 	_scene->addActor(*Camera);
@@ -79,7 +81,7 @@ PhysicsScene::~PhysicsScene()
 	PX_RELEASE(_foundation);
 }
 
-void PhysicsScene::Step(PxReal deltaTime) const
+void PhysicsScene::Step(const f32 deltaTime)
 {
 	if (deltaTime <= 0.0f)
 	{
@@ -88,66 +90,39 @@ void PhysicsScene::Step(PxReal deltaTime) const
 
 	// A frame that took a long time must not move the simulation too far.
 	const auto step = glm::clamp(deltaTime, 0.0f, MaximumStep);
+
+	// The ship follows the turn rate it is commanded with.
+	TurnRate += (TargetTurnRate - TurnRate) * (1.0f - std::exp(-TurnResponse * step));
+
+	const auto pose = Camera->getGlobalPose();
+	const auto orientation = glm::quat(pose.q.w, pose.q.x, pose.q.y, pose.q.z);
+
+	// The drive of the joint takes the speed relative to the world and the
+	// turn rate relative to the ship, which is the other way around from what
+	// the ship is commanded in.
+	const auto targetSpeed = orientation * TargetSpeed;
+	const auto targetTurnRate = -TurnRate;
+
+	Booster->setDriveVelocity(
+		PxVec3(targetSpeed.x, targetSpeed.y, targetSpeed.z),
+		PxVec3(targetTurnRate.x, targetTurnRate.y, targetTurnRate.z));
+
 	_scene->simulate(step);
 	_scene->fetchResults(true);
 }
 
-void PhysicsScene::Boost(Direction direction, f32 acceleration)
+void PhysicsScene::SetTargetSpeed(const glm::vec3& localSpeed)
 {
-	// Move relative facing direction
-	const auto quat = Camera->getGlobalPose().q;
-	const auto xaxis = quat.getBasisVector0();
-	const auto yaxis = quat.getBasisVector1();
-	const auto zaxis = quat.getBasisVector2();
-
-	if (direction == Direction::Forward)
-	{
-		LinearThrust -= zaxis * acceleration;
-	}
-	if (direction == Direction::Backward)
-	{
-		LinearThrust += zaxis * acceleration;
-	}
-	if (direction == Direction::Left)
-	{
-		LinearThrust -= xaxis * acceleration;
-	}
-	if (direction == Direction::Right)
-	{
-		LinearThrust += xaxis * acceleration;
-	}
-	if (direction == Direction::Up)
-	{
-		LinearThrust += yaxis * acceleration;
-	}
-	if (direction == Direction::Down)
-	{
-		LinearThrust -= yaxis * acceleration;
-	}
-	if (direction == Direction::RollCW)
-	{
-		AngularThrust.z += acceleration;
-	}
-	if (direction == Direction::RollCCW)
-	{
-		AngularThrust.z -= acceleration;
-	}
-	if (direction == Direction::Stop)
-	{
-		LinearThrust = PxVec3(0.0f);
-		AngularThrust = PxVec3(0.0f);
-	}
-
-	//std::clog << "LinearThrust (" << LinearThrust.x << ", " << LinearThrust.y << ", " << LinearThrust.z << ")" << std::endl;
-	//std::clog << "AngularThrust (" << AngularThrust.x << ", " << AngularThrust.y << ", " << AngularThrust.z << ")" << std::endl;
-	Booster->setDriveVelocity(LinearThrust, AngularThrust);
+	TargetSpeed = localSpeed;
 }
 
-void PhysicsScene::Tumble(const float x, const float y)
+void PhysicsScene::SetTargetTurnRate(const glm::vec3& localRate)
 {
-	const auto sensitivity = 0.001f;
+	TargetTurnRate = localRate;
+}
 
-	AngularThrust.x += y * sensitivity;
-	AngularThrust.y += x * sensitivity;
-	Booster->setDriveVelocity(LinearThrust, AngularThrust);
+void PhysicsScene::Stop()
+{
+	TargetSpeed = glm::vec3(0.0f);
+	TargetTurnRate = glm::vec3(0.0f);
 }

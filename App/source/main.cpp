@@ -16,6 +16,17 @@
 
 namespace
 {
+	// The speed the ship is commanded to have, in units per second.
+	constexpr auto kMaxSpeed = 25.0f;
+	constexpr auto kBoostSpeed = 100.0f;
+
+	// How fast the ship turns for the speed the mouse moves at, in radians per
+	// second per pixel per second.
+	constexpr auto kTurnSensitivity = 0.002f;
+
+	// The rate the ship rolls at, in radians per second.
+	constexpr auto kRollRate = 0.8f;
+
 	GLFWwindow* g_Window{ nullptr };
 	PhysicsScene* g_PhysicsScene{ nullptr };
 	Renderer* g_Renderer{ nullptr };
@@ -23,62 +34,47 @@ namespace
 	f64 g_MousePosXOld{};
 	f64 g_MousePosYOld{};
 
-	void HandleInput(Renderer& renderer)
+	// The movement of the mouse since the last frame, in pixels.
+	f64 g_MouseDeltaX{};
+	f64 g_MouseDeltaY{};
+
+	void HandleInput(Renderer& renderer, const f32 deltaTime)
 	{
 		if (glfwGetKey(g_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		{
 			glfwSetWindowShouldClose(g_Window, true);
 		}
 
-		f32 acceleration = 0.05f;
-		if (glfwGetKey(g_Window, GLFW_KEY_LEFT_SHIFT))
-		{
-			acceleration *= 10;
-		}
+		const auto speed = glfwGetKey(g_Window, GLFW_KEY_LEFT_SHIFT) ? kBoostSpeed : kMaxSpeed;
 
-		if (glfwGetKey(g_Window, GLFW_KEY_W) == GLFW_PRESS)
-		{
-			g_PhysicsScene->Boost(Direction::Forward, acceleration);
-		}
+		// The speed the ship is commanded to have, in its own frame. The nose of
+		// the ship points along its negative Z axis and its right wing along its
+		// positive X axis.
+		glm::vec3 targetSpeed{ 0.0f };
+		if (glfwGetKey(g_Window, GLFW_KEY_W) == GLFW_PRESS) { targetSpeed.z -= speed; }
+		if (glfwGetKey(g_Window, GLFW_KEY_S) == GLFW_PRESS) { targetSpeed.z += speed; }
+		if (glfwGetKey(g_Window, GLFW_KEY_A) == GLFW_PRESS) { targetSpeed.x -= speed; }
+		if (glfwGetKey(g_Window, GLFW_KEY_D) == GLFW_PRESS) { targetSpeed.x += speed; }
+		if (glfwGetKey(g_Window, GLFW_KEY_SPACE) == GLFW_PRESS) { targetSpeed.y += speed; }
+		if (glfwGetKey(g_Window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) { targetSpeed.y -= speed; }
+		g_PhysicsScene->SetTargetSpeed(targetSpeed);
 
-		if (glfwGetKey(g_Window, GLFW_KEY_S) == GLFW_PRESS)
-		{
-			g_PhysicsScene->Boost(Direction::Backward, acceleration);
-		}
+		// The mouse steers, the keys roll. How fast the mouse moves is what
+		// the ship turns at, not how far it moved.
+		const auto mouseSpeed = deltaTime > 0.0f ? 1.0f / deltaTime : 0.0f;
+		const auto pitch = -static_cast<f32>(g_MouseDeltaY) * kTurnSensitivity * mouseSpeed;
+		const auto yaw = -static_cast<f32>(g_MouseDeltaX) * kTurnSensitivity * mouseSpeed;
+		g_MouseDeltaX = 0.0;
+		g_MouseDeltaY = 0.0;
 
-		if (glfwGetKey(g_Window, GLFW_KEY_A) == GLFW_PRESS)
-		{
-			g_PhysicsScene->Boost(Direction::Left, acceleration);
-		}
+		const auto roll = (glfwGetKey(g_Window, GLFW_KEY_Q) == GLFW_PRESS ? kRollRate : 0.0f)
+			- (glfwGetKey(g_Window, GLFW_KEY_E) == GLFW_PRESS ? kRollRate : 0.0f);
 
-		if (glfwGetKey(g_Window, GLFW_KEY_D) == GLFW_PRESS)
-		{
-			g_PhysicsScene->Boost(Direction::Right, acceleration);
-		}
-
-		if (glfwGetKey(g_Window, GLFW_KEY_E) == GLFW_PRESS)
-		{
-			g_PhysicsScene->Boost(Direction::RollCW, 0.05f);
-		}
-
-		if (glfwGetKey(g_Window, GLFW_KEY_Q) == GLFW_PRESS)
-		{
-			g_PhysicsScene->Boost(Direction::RollCCW, 0.05f);
-		}
+		g_PhysicsScene->SetTargetTurnRate(glm::vec3(pitch, yaw, roll));
 
 		if (glfwGetKey(g_Window, GLFW_KEY_R) == GLFW_PRESS)
 		{
-			g_PhysicsScene->Boost(Direction::Stop, 0.0f);
-		}
-
-		if (glfwGetKey(g_Window, GLFW_KEY_SPACE) == GLFW_PRESS)
-		{
-			g_PhysicsScene->Boost(Direction::Up, acceleration);
-		}
-
-		if (glfwGetKey(g_Window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-		{
-			g_PhysicsScene->Boost(Direction::Down, acceleration);
+			g_PhysicsScene->Stop();
 		}
 
 		if (glfwGetKey(g_Window, GLFW_KEY_F1) == GLFW_PRESS)
@@ -90,7 +86,7 @@ namespace
 	void Update(Renderer& renderer, const f32 deltaTime)
 	{
 		glfwPollEvents();
-		HandleInput(renderer);
+		HandleInput(renderer, deltaTime);
 
 		g_PhysicsScene->Step(deltaTime);
 	}
@@ -105,13 +101,10 @@ namespace
 
 	void WindowOnMouseMove(GLFWwindow* /*window*/, const double xPos, const double yPos)
 	{
-		if (g_PhysicsScene != nullptr)
-		{
-			g_PhysicsScene->Tumble(static_cast<f32>(xPos - g_MousePosXOld),
-								   static_cast<f32>(yPos - g_MousePosYOld));
-			g_MousePosXOld = xPos;
-			g_MousePosYOld = yPos;
-		}
+		g_MouseDeltaX += xPos - g_MousePosXOld;
+		g_MouseDeltaY += yPos - g_MousePosYOld;
+		g_MousePosXOld = xPos;
+		g_MousePosYOld = yPos;
 	}
 
 	void GetWorkingArea(s32* screenWidth, s32* screenHeight)

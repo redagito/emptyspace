@@ -36,12 +36,21 @@ Test/
  - D = accelerate to the right
  - Space = accelerate up
  - LCtrl = accelerate down
- - LShift = boost by factor 10
+ - LShift = boost by factor 4
  - Q = roll left
  - E = roll right
- - R = stop acceleration
- - Mouse = tumble
+ - R = stop
+ - Mouse = steer
+ - F1 = transition effect
+ - Esc = quit
 ```
+
+The ship is commanded in its own frame: W moves it along its nose and the mouse
+steers it. The mouse does not turn the ship by the distance it moved, it sets
+the rate the ship turns at, so the ship keeps turning while the mouse moves and
+holds its attitude when the mouse stops. The engines brake towards the speed
+they are commanded with, so the ship comes to a halt when the keys are
+released.
 
 ## Requirements
 
