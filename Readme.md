@@ -149,3 +149,8 @@ or run the test executable directly
 ```
 build/Test/Release/Test.exe
 ```
+
+The tests that render need an OpenGL 4.6 context. They create a hidden window
+for it, so a display has to be available, but nothing is shown and the mouse
+is not captured. The rendering tests read the render targets back and compare
+them against what the scene should produce.
