@@ -237,6 +237,38 @@ TEST_CASE("The tangent of a face follows its texture axis")
 	REQUIRE(centre.z == Catch::Approx(0.0f).margin(0.05f));
 }
 
+TEST_CASE("The specular map of the material scales the highlight")
+{
+	REQUIRE(GLTestContext() != nullptr);
+
+	const u8 whiteSpecular[4] = { 255, 255, 255, 255 };
+
+	auto blackDevice = std::make_unique<GraphicsDevice>();
+	auto blackScene = std::make_unique<TestScene>(*blackDevice, Shape::Cube,
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)));
+	blackScene->AddLight(LightType::PointLight, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 20.0f);
+
+	Renderer blackRenderer(FrameSize{ kSize, kSize }, std::move(blackScene));
+	blackRenderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
+	const auto blackLights = ReadTexture(blackRenderer.LightBuffer(), kSize, kSize);
+	const auto blackCentre = PixelAt(blackLights, kSize, kSize / 2, kSize / 2);
+
+	auto whiteDevice = std::make_unique<GraphicsDevice>();
+	auto whiteScene = std::make_unique<TestScene>(*whiteDevice, Shape::Cube,
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), nullptr, whiteSpecular);
+	whiteScene->AddLight(LightType::PointLight, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 20.0f);
+
+	Renderer whiteRenderer(FrameSize{ kSize, kSize }, std::move(whiteScene));
+	whiteRenderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
+	const auto whiteLights = ReadTexture(whiteRenderer.LightBuffer(), kSize, kSize);
+	const auto whiteCentre = PixelAt(whiteLights, kSize, kSize / 2, kSize / 2);
+
+	// A black specular map leaves only the diffuse, a white one adds the
+	// highlight of the same size again.
+	REQUIRE(blackCentre.r == Catch::Approx(0.525f).margin(0.01f));
+	REQUIRE(whiteCentre.r == Catch::Approx(1.05f).margin(0.01f));
+}
+
 TEST_CASE("A point light lights a surface in front of it")
 {
 	REQUIRE(GLTestContext() != nullptr);
