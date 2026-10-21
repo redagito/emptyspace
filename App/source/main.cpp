@@ -17,6 +17,7 @@ namespace
 {
 	GLFWwindow* g_Window{ nullptr };
 	PhysicsScene* g_PhysicsScene{ nullptr };
+	Renderer* g_Renderer{ nullptr };
 
 	f64 g_MousePosXOld{};
 	f64 g_MousePosYOld{};
@@ -95,7 +96,10 @@ namespace
 
 	void WindowOnFramebufferResized(GLFWwindow* /*window*/, const int width, const int height)
 	{
-		glViewport(0, 0, width, height);
+		if (g_Renderer != nullptr)
+		{
+			g_Renderer->Resize(width, height);
+		}
 	}
 
 	void WindowOnMouseMove(GLFWwindow* /*window*/, const double xPos, const double yPos)
@@ -194,10 +198,15 @@ int main(int /*argc*/, char** /*argv*/)
 
 	g_PhysicsScene = new PhysicsScene();
 
-	const FrameSize frameSize{ windowWidth, windowHeight };
+	// The framebuffer size is in pixels, the window size is in screen
+	// coordinates. They differ on a scaled display.
+	s32 frameWidth{};
+	s32 frameHeight{};
+	glfwGetFramebufferSize(g_Window, &frameWidth, &frameHeight);
 
 	{
-		Renderer renderer(frameSize);
+		Renderer renderer(FrameSize{ frameWidth, frameHeight });
+		g_Renderer = &renderer;
 
 		auto t1 = glfwGetTime();
 
@@ -213,8 +222,6 @@ int main(int /*argc*/, char** /*argv*/)
 		g_MousePosYOld = windowHeight / 2;
 		glfwSetCursorPos(g_Window, g_MousePosXOld, g_MousePosYOld);
 		glfwSetInputMode(g_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-		glViewport(0, 0, frameSize.Width, frameSize.Height);
 
 		while (!glfwWindowShouldClose(g_Window))
 		{
@@ -249,11 +256,14 @@ int main(int /*argc*/, char** /*argv*/)
 
 			const auto camera = Camera::FromPhysicsScene(*g_PhysicsScene);
 
-			renderer.Render(camera, deltaTime, frameSize);
+			glfwGetFramebufferSize(g_Window, &frameWidth, &frameHeight);
+			renderer.Render(camera, deltaTime, FrameSize{ frameWidth, frameHeight });
 
 			glFinish();
 			glfwSwapBuffers(g_Window);
 		}
+
+		g_Renderer = nullptr;
 	}
 
 	delete g_PhysicsScene;

@@ -58,32 +58,7 @@ Renderer::Renderer(const FrameSize& renderTarget, std::unique_ptr<Scene> scene)
 	_graphicsDevice = std::make_unique<GraphicsDevice>();
 	_scene = scene ? std::move(scene) : std::make_unique<SpaceScene>(*_graphicsDevice);
 
-	_gBufferFinalTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
-	_gBufferPositionTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
-	_gBufferNormalTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
-	_gBufferAlbedoTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGBA8, GL_RGBA, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
-	_gBufferDepthTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_DEPTH_COMPONENT32, GL_DEPTH, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
-	_gBufferVelocityTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RG16F, GL_RG, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
-	_lightBufferTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
-	_motionBlurTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
-	_transitionTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
-	_emissionTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGBA, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
-	_emissionResultTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, _renderTarget.Width, _renderTarget.Height, nullptr, GL_NEAREST));
-
-	_geometryFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Geometry",
-		{
-			_gBufferPositionTexture.get(),
-			_gBufferNormalTexture.get(),
-			_gBufferAlbedoTexture.get(),
-			_gBufferVelocityTexture.get(),
-			_emissionTexture.get(),
-		},
-		_gBufferDepthTexture.get()));
-	_finalFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Final", { _gBufferFinalTexture.get() }));
-	_emissionFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Emission", { _emissionResultTexture.get() }));
-	_motionBlurFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Motionblur", { _motionBlurTexture.get() }));
-	_lightsFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Lights", { _lightBufferTexture.get() }));
-	_transitionFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Transition", { _transitionTexture.get() }));
+	CreateRenderTargets(_renderTarget.Width, _renderTarget.Height);
 
 	_skyboxTextureCube = std::unique_ptr<TextureCube>(_graphicsDevice->CreateTextureCubeFromFiles({
 		"data/textures/TC_SkySpace_Xn.png",
@@ -131,6 +106,61 @@ Renderer::Renderer(const FrameSize& renderTarget, std::unique_ptr<Scene> scene)
 }
 
 Renderer::~Renderer() = default;
+
+void Renderer::CreateRenderTargets(const s32 width, const s32 height)
+{
+	_gBufferFinalTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, width, height, nullptr, GL_NEAREST));
+	_gBufferPositionTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGB, width, height, nullptr, GL_NEAREST));
+	_gBufferNormalTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, width, height, nullptr, GL_NEAREST));
+	_gBufferAlbedoTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGBA8, GL_RGBA, width, height, nullptr, GL_NEAREST));
+	_gBufferDepthTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_DEPTH_COMPONENT32, GL_DEPTH, width, height, nullptr, GL_NEAREST));
+	_gBufferVelocityTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RG16F, GL_RG, width, height, nullptr, GL_NEAREST));
+	_lightBufferTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, width, height, nullptr, GL_NEAREST));
+	_motionBlurTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, width, height, nullptr, GL_NEAREST));
+	_transitionTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB8, GL_RGB, width, height, nullptr, GL_NEAREST));
+	_emissionTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGBA16F, GL_RGBA, width, height, nullptr, GL_NEAREST));
+	_emissionResultTexture = std::unique_ptr<Texture>(_graphicsDevice->CreateTexture(GL_RGB16F, GL_RGB, width, height, nullptr, GL_NEAREST));
+
+	_geometryFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Geometry",
+		{
+			_gBufferPositionTexture.get(),
+			_gBufferNormalTexture.get(),
+			_gBufferAlbedoTexture.get(),
+			_gBufferVelocityTexture.get(),
+			_emissionTexture.get(),
+		},
+		_gBufferDepthTexture.get()));
+	_finalFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Final", { _gBufferFinalTexture.get() }));
+	_emissionFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Emission", { _emissionResultTexture.get() }));
+	_motionBlurFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Motionblur", { _motionBlurTexture.get() }));
+	_lightsFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Lights", { _lightBufferTexture.get() }));
+	_transitionFramebuffer = std::unique_ptr<Framebuffer>(_graphicsDevice->CreateFramebuffer("FB_Transition", { _transitionTexture.get() }));
+}
+
+void Renderer::Resize(const s32 width, const s32 height)
+{
+	if (width <= 0 || height <= 0)
+	{
+		return;
+	}
+
+	if (width == _renderTarget.Width && height == _renderTarget.Height)
+	{
+		return;
+	}
+
+	// The framebuffers have to go before the textures they point at.
+	_geometryFramebuffer.reset();
+	_emissionFramebuffer.reset();
+	_finalFramebuffer.reset();
+	_motionBlurFramebuffer.reset();
+	_lightsFramebuffer.reset();
+	_transitionFramebuffer.reset();
+
+	CreateRenderTargets(width, height);
+
+	_renderTarget = FrameSize{ width, height };
+}
 
 void Renderer::Render(const Camera& camera, const f32 deltaTime, const FrameSize& window)
 {

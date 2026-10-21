@@ -30,6 +30,9 @@ public:
 
 	void Render(const Camera& camera, f32 deltaTime, const FrameSize& window);
 
+	// Resizes the render targets to match a resized output.
+	void Resize(s32 width, s32 height);
+
 	void SetTransitionEffectEnabled(const bool enabled) { _isTransitionEffectEnabled = enabled; }
 	void SetMotionBlurEnabled(const bool enabled) { _isMotionBlurEnabled = enabled; }
 
@@ -43,6 +46,7 @@ public:
 	[[nodiscard]] const Texture& Final() const { return *_gBufferFinalTexture; }
 
 private:
+	void CreateRenderTargets(s32 width, s32 height);
 	void RenderGBuffer(const glm::mat4& projection, const glm::mat4& view);
 	void RenderLights(const glm::mat4& projection, const Camera& camera);
 	void RenderEmission();

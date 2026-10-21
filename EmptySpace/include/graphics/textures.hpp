@@ -17,8 +17,13 @@ public:
 
     [[nodiscard]] u32 Id() const;
     void Bind(const u32 textureUnit) const;
+
+    [[nodiscard]] s32 Width() const { return _width; }
+    [[nodiscard]] s32 Height() const { return _height; }
 private:
     u32 _id{};
+    s32 _width{};
+    s32 _height{};
 
     static const char* FilterToString(const GLuint filter);
     static const char* WrapToString(const GLuint wrap);

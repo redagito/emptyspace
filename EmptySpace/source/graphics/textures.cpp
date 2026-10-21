@@ -38,6 +38,8 @@ Texture* Texture::FromFile(const std::string_view filepath, const u32 component)
 }
 
 Texture::Texture(const u32 internalFormat, const u32 format, const s32 width, const s32 height, void* data, const u32 filter, const u32 wrap)
+    : _width{ width }
+    , _height{ height }
 {
     glCreateTextures(GL_TEXTURE_2D, 1, &_id);
     glTextureStorage2D(_id, 1, internalFormat, width, height);

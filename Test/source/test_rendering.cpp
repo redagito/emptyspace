@@ -14,9 +14,9 @@ namespace
 {
 	constexpr s32 kSize = 64;
 
-	glm::vec4 PixelAt(const std::vector<f32>& data, const s32 x, const s32 y)
+	glm::vec4 PixelAt(const std::vector<f32>& data, const s32 width, const s32 x, const s32 y)
 	{
-		const auto offset = (static_cast<std::size_t>(y) * kSize + x) * 4;
+		const auto offset = (static_cast<std::size_t>(y) * width + x) * 4;
 		return glm::vec4(data[offset], data[offset + 1], data[offset + 2], data[offset + 3]);
 	}
 
@@ -41,7 +41,7 @@ TEST_CASE("The G buffer stores the world position of a fragment")
 	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
 
 	const auto gbuffer = ReadTexture(renderer.GBufferPosition(), kSize, kSize);
-	const auto centre = PixelAt(gbuffer, kSize / 2, kSize / 2);
+	const auto centre = PixelAt(gbuffer, kSize, kSize / 2, kSize / 2);
 
 	// The unit cube sits half a unit around its origin, so the face towards
 	// the camera is at (0, 0, -9.5). The middle pixel of an even sized target
@@ -62,7 +62,7 @@ TEST_CASE("The G buffer normal of a face is the normal of that face")
 	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
 
 	const auto gbuffer = ReadTexture(renderer.GBufferNormal(), kSize, kSize);
-	const auto centre = PixelAt(gbuffer, kSize / 2, kSize / 2);
+	const auto centre = PixelAt(gbuffer, kSize, kSize / 2, kSize / 2);
 
 	REQUIRE(std::isfinite(centre.x));
 	REQUIRE(std::isfinite(centre.y));
@@ -94,7 +94,7 @@ TEST_CASE("Geometry without a tangent keeps its vertex normal")
 	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
 
 	const auto gbuffer = ReadTexture(renderer.GBufferNormal(), kSize, kSize);
-	const auto centre = PixelAt(gbuffer, kSize / 2, kSize / 2);
+	const auto centre = PixelAt(gbuffer, kSize, kSize / 2, kSize / 2);
 
 	REQUIRE(std::isfinite(centre.x));
 	REQUIRE(std::isfinite(centre.y));
@@ -122,7 +122,7 @@ TEST_CASE("The emission pass fills the emission buffer")
 	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
 
 	const auto emission = ReadTexture(renderer.Emission(), kSize, kSize);
-	const auto centre = PixelAt(emission, kSize / 2, kSize / 2);
+	const auto centre = PixelAt(emission, kSize, kSize / 2, kSize / 2);
 
 	REQUIRE(centre.r > 0.0f);
 	REQUIRE(centre.g > 0.0f);
@@ -144,13 +144,37 @@ TEST_CASE("The resolved image contains the emission")
 	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
 
 	const auto lights = ReadTexture(renderer.LightBuffer(), kSize, kSize);
-	const auto lightCentre = PixelAt(lights, kSize / 2, kSize / 2);
+	const auto lightCentre = PixelAt(lights, kSize, kSize / 2, kSize / 2);
 
 	const auto final = ReadTexture(renderer.Final(), kSize, kSize);
-	const auto finalCentre = PixelAt(final, kSize / 2, kSize / 2);
+	const auto finalCentre = PixelAt(final, kSize, kSize / 2, kSize / 2);
 
 	REQUIRE(lightCentre.r > 0.0f);
 	REQUIRE(finalCentre.r > lightCentre.r + 0.1f);
+}
+
+TEST_CASE("The renderer follows a resize")
+{
+	REQUIRE(GLTestContext() != nullptr);
+
+	auto device = std::make_unique<GraphicsDevice>();
+	auto scene = std::make_unique<TestScene>(*device, Shape::Cube,
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)));
+
+	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
+	REQUIRE(renderer.GBufferPosition().Width() == kSize);
+	REQUIRE(renderer.GBufferPosition().Height() == kSize);
+
+	renderer.Resize(kSize / 2, kSize / 2);
+	REQUIRE(renderer.GBufferPosition().Width() == kSize / 2);
+	REQUIRE(renderer.GBufferPosition().Height() == kSize / 2);
+
+	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize / 2, kSize / 2 });
+
+	const auto gbuffer = ReadTexture(renderer.GBufferPosition(), kSize / 2, kSize / 2);
+	const auto centre = PixelAt(gbuffer, kSize / 2, kSize / 4, kSize / 4);
+
+	REQUIRE(centre.z == Catch::Approx(-9.5f).margin(0.01f));
 }
 
 TEST_CASE("A point light lights a surface in front of it")
@@ -165,7 +189,7 @@ TEST_CASE("A point light lights a surface in front of it")
 	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
 
 	const auto lights = ReadTexture(renderer.LightBuffer(), kSize, kSize);
-	const auto centre = PixelAt(lights, kSize / 2, kSize / 2);
+	const auto centre = PixelAt(lights, kSize, kSize / 2, kSize / 2);
 
 	REQUIRE(centre.r > 0.0f);
 	REQUIRE(centre.g > 0.0f);
@@ -185,7 +209,7 @@ TEST_CASE("A spot light only lights surfaces inside its cone")
 	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
 
 	const auto lights = ReadTexture(renderer.LightBuffer(), kSize, kSize);
-	const auto centre = PixelAt(lights, kSize / 2, kSize / 2);
+	const auto centre = PixelAt(lights, kSize, kSize / 2, kSize / 2);
 
 	// The cone points away from the surface, so the surface stays dark.
 	REQUIRE(centre.r == Catch::Approx(0.0f).margin(0.001f));
