@@ -110,12 +110,10 @@ TEST_CASE("The emission pass fills the emission buffer")
 {
 	REQUIRE(GLTestContext() != nullptr);
 
-	// A grey specular map makes the geometry emissive.
-	const u8 greySpecular[4] = { 64, 64, 64, 255 };
-
 	auto device = std::make_unique<GraphicsDevice>();
 	auto scene = std::make_unique<TestScene>(*device, Shape::Cube,
-		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), nullptr, greySpecular);
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), nullptr, nullptr,
+		glm::vec3(0.25f, 0.5f, 0.75f));
 	scene->AddLight(LightType::PointLight, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 12.0f);
 
 	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
@@ -133,11 +131,10 @@ TEST_CASE("The resolved image contains the emission")
 {
 	REQUIRE(GLTestContext() != nullptr);
 
-	const u8 greySpecular[4] = { 64, 64, 64, 255 };
-
 	auto device = std::make_unique<GraphicsDevice>();
 	auto scene = std::make_unique<TestScene>(*device, Shape::Cube,
-		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), nullptr, greySpecular);
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), nullptr, nullptr,
+		glm::vec3(0.25f, 0.5f, 0.75f));
 	scene->AddLight(LightType::PointLight, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 12.0f);
 
 	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
@@ -175,6 +172,45 @@ TEST_CASE("The renderer follows a resize")
 	const auto centre = PixelAt(gbuffer, kSize / 2, kSize / 4, kSize / 4);
 
 	REQUIRE(centre.z == Catch::Approx(-9.5f).margin(0.01f));
+}
+
+TEST_CASE("A surface without an emissive material does not emit")
+{
+	REQUIRE(GLTestContext() != nullptr);
+
+	auto device = std::make_unique<GraphicsDevice>();
+	auto scene = std::make_unique<TestScene>(*device, Shape::Cube,
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)));
+
+	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
+	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
+
+	const auto emission = ReadTexture(renderer.GBufferEmission(), kSize, kSize);
+	const auto centre = PixelAt(emission, kSize, kSize / 2, kSize / 2);
+
+	REQUIRE(centre.r == Catch::Approx(0.0f).margin(0.001f));
+	REQUIRE(centre.g == Catch::Approx(0.0f).margin(0.001f));
+	REQUIRE(centre.b == Catch::Approx(0.0f).margin(0.001f));
+}
+
+TEST_CASE("An emissive material emits its colour")
+{
+	REQUIRE(GLTestContext() != nullptr);
+
+	auto device = std::make_unique<GraphicsDevice>();
+	auto scene = std::make_unique<TestScene>(*device, Shape::Cube,
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), nullptr, nullptr,
+		glm::vec3(0.25f, 0.5f, 0.75f));
+
+	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
+	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
+
+	const auto emission = ReadTexture(renderer.GBufferEmission(), kSize, kSize);
+	const auto centre = PixelAt(emission, kSize, kSize / 2, kSize / 2);
+
+	REQUIRE(centre.r == Catch::Approx(0.25f).margin(0.01f));
+	REQUIRE(centre.g == Catch::Approx(0.5f).margin(0.01f));
+	REQUIRE(centre.b == Catch::Approx(0.75f).margin(0.01f));
 }
 
 TEST_CASE("A point light lights a surface in front of it")

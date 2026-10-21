@@ -18,10 +18,12 @@ layout(binding = 0) uniform sampler2D t_diffuse;
 layout(binding = 1) uniform sampler2D t_specular;
 layout(binding = 2) uniform sampler2D t_normal;
 
+layout(location = 0) uniform vec3 u_emission;
+
 void main()
 {
     vec3 v_diffuse = texture(t_diffuse, fs_uv).rgb;
-    vec3 v_specular = texture(t_specular, fs_uv).rgb;
+    float v_specular = texture(t_specular, fs_uv).r;
 
     // The normal map is only meaningful with a tangent to build the tangent
     // space from. Without one the vertex normal is used as it is.
@@ -35,9 +37,9 @@ void main()
     }
     v_normal = (fs_model_matrix * vec4(v_normal, 0.0)).xyz;
 
-    out_position = vec4(fs_fragment_position, v_specular.r);
+    out_position = vec4(fs_fragment_position, v_specular);
     out_normal = normalize(v_normal);
     out_albedo.rgb = v_diffuse;
     out_velocity = ((fs_current_position.xy / fs_current_position.w) * 0.5 + 0.5) - ((fs_previous_position.xy / fs_previous_position.w) * 0.5 + 0.5);
-    out_emission = vec4(v_specular, 1.0f) * 1.2f;
+    out_emission = vec4(u_emission, 1.0f);
 }

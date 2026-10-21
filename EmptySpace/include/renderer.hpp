@@ -41,6 +41,7 @@ public:
 	[[nodiscard]] const Texture& GBufferPosition() const { return *_gBufferPositionTexture; }
 	[[nodiscard]] const Texture& GBufferNormal() const { return *_gBufferNormalTexture; }
 	[[nodiscard]] const Texture& GBufferAlbedo() const { return *_gBufferAlbedoTexture; }
+	[[nodiscard]] const Texture& GBufferEmission() const { return *_emissionTexture; }
 	[[nodiscard]] const Texture& LightBuffer() const { return *_lightBufferTexture; }
 	[[nodiscard]] const Texture& Emission() const { return *_emissionResultTexture; }
 	[[nodiscard]] const Texture& Final() const { return *_gBufferFinalTexture; }

@@ -19,7 +19,8 @@ public:
 	// The normal map defaults to a flat one, the specular map to a black one.
 	// Pass four bytes to use another.
 	TestScene(GraphicsDevice& device, Shape shape, const glm::mat4& model,
-		const u8* normalMap = nullptr, const u8* specularMap = nullptr);
+		const u8* normalMap = nullptr, const u8* specularMap = nullptr,
+		const glm::vec3& emission = glm::vec3(0.0f));
 
 	void Cleanup() override;
 	void InternalUpdate(f32 /*deltaTime*/, const Camera& /*camera*/) override;

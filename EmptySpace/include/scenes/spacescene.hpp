@@ -68,7 +68,9 @@ protected:
 	void InitializeTextures()
 	{
 		_textureCubeDiffuse = _graphicsDevice.CreateTextureFromFile("data/textures/T_PlasticMesh_D.jpg", STBI_rgb);
-		_textureCubeSpecular = _graphicsDevice.CreateTextureFromFile("data/textures/T_PlasticMesh_S.jpg", STBI_grey);
+		// The specular map is greyscale but it is sampled as a colour, so it
+		// has to keep its value in every channel.
+		_textureCubeSpecular = _graphicsDevice.CreateTextureFromFile("data/textures/T_PlasticMesh_S.jpg", STBI_rgb);
 		_textureCubeNormal = _graphicsDevice.CreateTextureFromFile("data/textures/T_PlasticMesh_N.jpg", STBI_rgb);
 
 		_defaultMaterial = new Material(_textureCubeDiffuse, _textureCubeNormal, _textureCubeSpecular);

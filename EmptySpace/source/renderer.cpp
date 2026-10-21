@@ -47,6 +47,8 @@ namespace
 	constexpr auto kUniformEmissionThreshold = 0;
 	constexpr auto kUniformBlendColor = 0;
 
+	constexpr auto kUniformEmission = 0;
+
 	constexpr auto kFieldOfView = glm::radians(60.0f);
 	constexpr auto kAsteroidInstanceCount = 5000;
 	constexpr auto kPointLightVertexCount = 240;
@@ -245,6 +247,7 @@ void Renderer::RenderGBuffer(const glm::mat4& projection, const glm::mat4& view)
 		_geometryProgram->SetVertexShaderUniform(kUniformModelViewProjectionPrevious, object->ModelViewProjectionPrevious);
 		_geometryProgram->SetVertexShaderUniform(kUniformExcludeFromMotionBlur, object->ExcludeFromMotionBlur);
 		_geometryProgram->SetVertexShaderUniform(kUniformIsInstanced, object->ObjectShape == Shape::CubeInstanced);
+		_geometryProgram->SetFragmentShaderUniform(kUniformEmission, object->ObjectMaterial->Emission());
 
 		object->ModelViewProjectionPrevious = currentModelViewProjection;
 
