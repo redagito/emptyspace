@@ -14,6 +14,12 @@
 class SpaceScene : public Scene
 {
 public:
+	// The rate the cubes orbit the origin at, in radians per second.
+	static constexpr f32 OrbitRate = 0.35f;
+
+	// The rate the cubes spin on their own axis at, in radians per second.
+	static constexpr f32 SpinRate = 0.6f;
+
 	SpaceScene(GraphicsDevice& graphicsDevice)
 		: _graphicsDevice{ graphicsDevice }
 	{
@@ -86,16 +92,16 @@ public:
 		_bufferAsteroids = new Buffer(asteroidInstances);
 	}
 
-	void InternalUpdate(f32 /*deltaTime*/, const Camera& camera) override
+	void InternalUpdate(const f32 deltaTime, const Camera& camera) override
 	{
-		// TODO Framerate dependent?
-		/* Cube orbit */
-		static auto cubeSpeed = 0.125f;
-		static auto orbitProgression = 0.0f;
+		// The cubes orbit and spin at a fixed rate, whatever the frame rate is.
+		_orbitProgression += deltaTime * OrbitRate;
+		_spinProgression += deltaTime * SpinRate;
+
 		auto const orbitCenter = glm::vec3(0.0f, 0.0f, 0.0f);
 
 		_objects[0]->ModelViewProjection = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 1.0f, 10.0f));
-		_objects[1]->ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter) * glm::rotate(glm::mat4(1.0f), orbitProgression * cubeSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
+		_objects[1]->ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter) * glm::rotate(glm::mat4(1.0f), _spinProgression, glm::vec3(0.0f, 1.0f, 0.0f));
 
 		// The ship is drawn with the orientation of the camera, a little behind
 		// it and off to the side.
@@ -107,11 +113,10 @@ public:
 		const auto objectCount = _objects.size();
 		for (std::size_t i = 3; i < objectCount; i++)
 		{
-			auto const orbitAmount = (orbitProgression * cubeSpeed + static_cast<f32>(i) * 90.0f * glm::pi<f32>() / 180.0f);
-			auto const orbitPosition = OrbitAxis(orbitAmount, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(2.0f, 0.0f, 2.0f)) + glm::vec3(0.0f, 0.0f, 0.0f);
-			_objects[i]->ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter + orbitPosition) * glm::rotate(glm::mat4(1.0f), orbitAmount * 7.0f, glm::vec3(0.0f, -1.0f, 0.0f));
+			const auto orbitAmount = _orbitProgression + static_cast<f32>(i) * 90.0f * glm::pi<f32>() / 180.0f;
+			const auto orbitPosition = OrbitAxis(orbitAmount, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(2.0f, 0.0f, 2.0f));
+			_objects[i]->ModelViewProjection = glm::translate(glm::mat4(1.0f), orbitCenter + orbitPosition) * glm::rotate(glm::mat4(1.0f), _spinProgression + orbitAmount, glm::vec3(0.0f, -1.0f, 0.0f));
 		}
-		orbitProgression += 0.1f;
 	}
 
 private:
@@ -201,4 +206,7 @@ private:
 	Texture* _textureCubeNormal{};
 
 	Buffer* _bufferAsteroids{};
+
+	f32 _orbitProgression{ 0.0f };
+	f32 _spinProgression{ 0.0f };
 };

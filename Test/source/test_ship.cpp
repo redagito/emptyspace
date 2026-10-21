@@ -75,6 +75,44 @@ TEST_CASE("The spotlight of the demo scene covers the cubes the camera starts am
 	REQUIRE(theta <= 1.0f);
 }
 
+TEST_CASE("The cubes spin at the same rate whatever the frame rate is")
+{
+	REQUIRE(GLTestContext() != nullptr);
+
+	auto device = std::make_unique<GraphicsDevice>();
+
+	Camera camera;
+	camera.Position = glm::vec3(0.0f, 0.0f, 0.0f);
+	camera.Direction = glm::vec3(0.0f, 0.0f, 1.0f);
+	camera.View = glm::mat4(1.0f);
+	camera.Orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+
+	SpaceScene at60(*device);
+	at60.Initialize();
+	for (int i = 0; i < 60; ++i)
+	{
+		at60.Update(1.0f / 60.0f, camera);
+	}
+
+	SpaceScene at144(*device);
+	at144.Initialize();
+	for (int i = 0; i < 144; ++i)
+	{
+		at144.Update(1.0f / 144.0f, camera);
+	}
+
+	// After a second the cube in the middle has to be in the same place.
+	const auto& slow = at60.Objects()[1]->ModelViewProjection;
+	const auto& fast = at144.Objects()[1]->ModelViewProjection;
+	for (int column = 0; column < 4; ++column)
+	{
+		for (int row = 0; row < 4; ++row)
+		{
+			REQUIRE(slow[column][row] == Catch::Approx(fast[column][row]).margin(0.001f));
+		}
+	}
+}
+
 TEST_CASE("The ship is drawn behind and below the camera")
 {
 	REQUIRE(GLTestContext() != nullptr);
