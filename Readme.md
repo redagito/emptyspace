@@ -7,21 +7,11 @@ Space flight Demo with OpenGL based deferred rendering.
 
 ## Project layout
 
-| Directory     | Target            | Contents                                                    |
-|---------------|-------------------|-------------------------------------------------------------|
-| `EmptySpace/` | `EmptySpace.lib`  | The static library. All rendering, scene and physics logic. |
-| `App/`        | `App.exe`         | The application. Window, input and the frame loop.          |
-| `Test/`       | `Test.exe`        | Catch2 unit tests for the library.                          |
-
-The library is compiled once, the application and the tests link against it.
-The root `CMakeLists.txt` is an umbrella that includes all three.
-
-```
-EmptySpace/include   public headers
-EmptySpace/source    implementation
-App/source            main.cpp
-Test/source           unit tests
-```
+| Directory     | Target            | Contents                          |
+|---------------|-------------------|-----------------------------------|
+| `EmptySpace/` | `EmptySpace.lib`  | The static library.               |
+| `App/`        | `App.exe`         | The application.                  |
+| `Test/`       | `Test.exe`        | Catch2 unit tests for the library. |
 
 ## Controls
 
@@ -41,17 +31,14 @@ Test/source           unit tests
  - Esc = quit
 ```
 
-The ship is commanded in its own frame. The mouse sets the rate the ship turns
-at, not how far it turns, and the engines brake towards the speed they are
-commanded with.
+The mouse sets the rate the ship turns at. The engines brake towards the speed
+they are commanded with.
 
 ## Requirements
 
 * Conan 2.x
 * CMake 3.25.x or newer
 * Visual Studio 2022 or newer
-
-External dependencies: GLFW, GLAD, PhysX, stb_image, glm, assimp, Catch2
 
 ## Building
 
@@ -79,13 +66,6 @@ cmake --preset conan-default
 cmake --build build --config Release
 ```
 
-Produces
-```
-build/EmptySpace/Release/EmptySpace.lib
-build/App/Release/App.exe
-build/Test/Release/Test.exe
-```
-
 ### Visual Studio 2026
 
 ```
@@ -94,23 +74,16 @@ conan install . --build=missing -s build_type=Release -s compiler.version=195 -c
 
 ## Running
 
-The application loads its assets from a `data` directory relative to the working
-directory, the build copies it next to the executable.
-
+The assets are loaded from a `data` directory next to the executable.
 ```
 cd build/App/Release
 App.exe
 ```
 
-## Running the tests
+## Tests
 
 ```
 ctest --test-dir build -C Release --output-on-failure
-```
-
-or
-```
-build/Test/Release/Test.exe
 ```
 
 The rendering tests need an OpenGL 4.6 context, they create a hidden window for
