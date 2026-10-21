@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <filesystem>
 #include <string>
+#include <memory>
 #include <unordered_map>
 
 struct AttributeFormat
@@ -32,25 +33,25 @@ public:
 	static Geometry* CreatePlainFromFile(const std::filesystem::path& filePath);
 	static Geometry* CreateFromFile(const std::filesystem::path& filePath);
 
-	Geometry(
-		const Buffer& vertexBuffer,
-		const Buffer& indexBuffer,
-		const enum VertexType vertexType)
-	{
-		glCreateVertexArrays(1, &_vao);
+    Geometry(
+        std::unique_ptr<Buffer> vertexBuffer,
+        std::unique_ptr<Buffer> indexBuffer,
+        const enum VertexType vertexType)
+    {
+        glCreateVertexArrays(1, &_vao);
 #ifdef _DEBUG
-		char label[64];
-		snprintf(label, sizeof(label), "VAO_%s", _names[vertexType].c_str());
-		glObjectLabel(0x8074, _vao, static_cast<GLsizei>(strlen(label)), label); // 0x8074 = GL_VERTEX_ARRAY
+        char label[64];
+        snprintf(label, sizeof(label), "VAO_%s", _names[vertexType].c_str());
+        glObjectLabel(0x8074, _vao, static_cast<GLsizei>(strlen(label)), label); // 0x8074 = GL_VERTEX_ARRAY
 #endif
-		glVertexArrayVertexBuffer(_vao, 0, vertexBuffer.Id(), 0, vertexBuffer.Stride());
-		glVertexArrayElementBuffer(_vao, indexBuffer.Id());
+        glVertexArrayVertexBuffer(_vao, 0, vertexBuffer->Id(), 0, vertexBuffer->Stride());
+        glVertexArrayElementBuffer(_vao, indexBuffer->Id());
 
-		_vertexCount = vertexBuffer.Size();
-		_indexCount = indexBuffer.Size();
+        _vertexCount = vertexBuffer->Size();
+        _indexCount = indexBuffer->Size();
 
-		SetupInputLayout(vertexType);
-	}
+        SetupInputLayout(vertexType);
+    }
 
 	void Bind() const;
 	void Draw() const;

@@ -23,21 +23,6 @@ enum PlaneData
 	D = 3				// The distance the plane is from the origin
 };
 
-inline void NormalizePlane(float frustum[6][4], int side)
-{
-	// Here we calculate the magnitude of the normal to the plane (point A B C)
-	// Remember that (A, B, C) is that same thing as the normal's (X, Y, Z).
-	// To calculate magnitude you use the equation:  magnitude = sqrt( x^2 + y^2 + z^2)
-	const auto magnitude = static_cast<float>(sqrt(frustum[side][A] * frustum[side][A] + frustum[side][B] * frustum[side][B] + frustum[side][C] * frustum[side][C]));
-
-	// Then we divide the plane's values by it's magnitude.
-	// This makes it easier to work with.
-	frustum[side][A] /= magnitude;
-	frustum[side][B] /= magnitude;
-	frustum[side][C] /= magnitude;
-	frustum[side][D] /= magnitude;
-}
-
 class Frustum
 {
 public:
@@ -84,7 +69,7 @@ public:
 		// we want to normalize that normal and distance.
 
 		// Normalize the RIGHT side
-		NormalizePlane(_frustum, RIGHT);
+		NormalizePlane(RIGHT);
 
 		// This will extract the LEFT side of the frustum
 		_frustum[LEFT][A] = clip[3] + clip[0];
@@ -93,7 +78,7 @@ public:
 		_frustum[LEFT][D] = clip[15] + clip[12];
 
 		// Normalize the LEFT side
-		NormalizePlane(_frustum, LEFT);
+		NormalizePlane(LEFT);
 
 		// This will extract the BOTTOM side of the frustum
 		_frustum[BOTTOM][A] = clip[3] + clip[1];
@@ -102,7 +87,7 @@ public:
 		_frustum[BOTTOM][D] = clip[15] + clip[13];
 
 		// Normalize the BOTTOM side
-		NormalizePlane(_frustum, BOTTOM);
+		NormalizePlane(BOTTOM);
 
 		// This will extract the TOP side of the frustum
 		_frustum[TOP][A] = clip[3] - clip[1];
@@ -111,7 +96,7 @@ public:
 		_frustum[TOP][D] = clip[15] - clip[13];
 
 		// Normalize the TOP side
-		NormalizePlane(_frustum, TOP);
+		NormalizePlane(TOP);
 
 		// This will extract the BACK side of the frustum
 		_frustum[BACK][A] = clip[3] - clip[2];
@@ -120,7 +105,7 @@ public:
 		_frustum[BACK][D] = clip[15] - clip[14];
 
 		// Normalize the BACK side
-		NormalizePlane(_frustum, BACK);
+		NormalizePlane(BACK);
 
 		// This will extract the FRONT side of the frustum
 		_frustum[FRONT][A] = clip[3] + clip[2];
@@ -129,7 +114,7 @@ public:
 		_frustum[FRONT][D] = clip[15] + clip[14];
 
 		// Normalize the FRONT side
-		NormalizePlane(_frustum, FRONT);
+		NormalizePlane(FRONT);
 	}
 
 	bool PointInFrustum(float x, float y, float z)
@@ -193,5 +178,20 @@ public:
 	}
 
 private:
+	// Divides the plane by the length of its normal, so that the distance to
+	// it can be read off the plane equation.
+	void NormalizePlane(const int side)
+	{
+		const auto magnitude = static_cast<float>(sqrt(
+			_frustum[side][A] * _frustum[side][A] +
+			_frustum[side][B] * _frustum[side][B] +
+			_frustum[side][C] * _frustum[side][C]));
+
+		_frustum[side][A] /= magnitude;
+		_frustum[side][B] /= magnitude;
+		_frustum[side][C] /= magnitude;
+		_frustum[side][D] /= magnitude;
+	}
+
 	float _frustum[6][4];
 };

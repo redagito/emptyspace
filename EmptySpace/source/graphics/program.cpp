@@ -3,11 +3,6 @@
 #include <iostream>
 #include <sstream>
 
-[[nodiscard]] u32 Program::GetId() const
-{
-    return _pipeline;
-}
-
 Program::Program(
     [[maybe_unused]] const std::string_view label,
     const std::string_view vertexShaderFilePath,
@@ -57,10 +52,9 @@ void Program::ValidateProgram(const u32 shader, const std::string_view filename)
     {
         std::array<char, 1024> compilerLog{};
         glGetProgramInfoLog(shader, static_cast<u32>(compilerLog.size()), nullptr, compilerLog.data());
-        glDeleteShader(shader);
 
         std::ostringstream message;
         message << "SHADER: " << filename << " contains error(s):\n\n" << compilerLog.data() << '\n';
-        std::cout << message.str();
+        std::cerr << message.str();
     }
 }

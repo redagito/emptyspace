@@ -4,6 +4,7 @@
 #include "graphics/graphicsdevice.hpp"
 #include "graphics/program.hpp"
 #include "graphics/textures.hpp"
+#include "math/ring.hpp"
 #include "scenes/scene.hpp"
 
 #include <GLFW/glfw3.h>
@@ -123,16 +124,16 @@ private:
 		{
 			auto model = glm::mat4(1.0f);
 			// 1. translation: displace along circle with 'radius' in range [-offset, offset]
-			const auto angle = static_cast<float>(i) / static_cast<float>(instanceCount) * 360.0f;
+			const auto ring = RingPosition(i, instanceCount, radius);
 			auto displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
 
-			const auto x = sin(angle) * radius + displacement;
+			const auto x = ring.x + displacement;
 			displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
 
 			const auto y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
 			displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
 
-			const auto z = cos(angle) * radius + displacement;
+			const auto z = ring.y + displacement;
 			model = glm::translate(model, glm::vec3(x, y, z));
 
 			// 2. scale: Scale between 0.05 and 0.25f
@@ -160,16 +161,16 @@ private:
 		for (u32 i = 0; i < lightCount; i++)
 		{
 			// 1. translation: displace along circle with 'radius' in range [-offset, offset]
-			const auto angle = static_cast<float>(i) / static_cast<float>(lightCount) * 360.0f;
+			const auto ring = RingPosition(i, lightCount, radius);
 			auto displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
 
-			const auto x = sin(angle) * radius + displacement;
+			const auto x = ring.x + displacement;
 			displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
 
 			const auto y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
 			displacement = rand() % static_cast<int>(2.0f * offset * 100) / 100.0f - offset;
 
-			const auto z = cos(angle) * radius + displacement;
+			const auto z = ring.y + displacement;
 			const auto position = glm::vec3(x, y, z);
 
 			const auto color = glm::vec3((rand() % 256) / 256.0f, (rand() % 256) / 256.0f, (rand() % 256) / 256.0f);

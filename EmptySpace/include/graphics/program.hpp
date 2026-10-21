@@ -28,8 +28,6 @@ u32 CreateShaderStorageBuffer(T* data, const u32 size)
 class Program
 {
 public:
-    [[nodiscard]] u32 GetId() const;
-
     Program(
         [[maybe_unused]] const std::string_view label,
         const std::string_view vertexShaderFilePath,

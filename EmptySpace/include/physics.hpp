@@ -24,6 +24,10 @@ enum class Direction
 class PhysicsScene
 {
 public:
+	// The longest step the simulation takes, a frame that took longer is
+	// clamped to it.
+	static constexpr f32 MaximumStep = 1.0f / 30.0f;
+
 	PhysicsScene();
 	~PhysicsScene();
 

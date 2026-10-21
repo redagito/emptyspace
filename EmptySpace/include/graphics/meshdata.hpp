@@ -5,6 +5,7 @@
 #include "graphics/geometry.hpp"
 
 #include <filesystem>
+#include <memory>
 #include <vector>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -108,10 +109,10 @@ public:
 			}
 		}
 
-		const auto vertexBuffer = new Buffer(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
-		const auto indexBuffer = new Buffer(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
-
-		return new Geometry(*vertexBuffer, *indexBuffer, _vertexType);
+		return new Geometry(
+			std::make_unique<Buffer>(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW),
+			std::make_unique<Buffer>(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW),
+			_vertexType);
 	}
 private:
 	void CalculateTangents();

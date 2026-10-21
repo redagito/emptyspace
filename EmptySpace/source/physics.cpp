@@ -81,7 +81,14 @@ PhysicsScene::~PhysicsScene()
 
 void PhysicsScene::Step(PxReal deltaTime) const
 {
-	_scene->simulate(deltaTime);
+	if (deltaTime <= 0.0f)
+	{
+		return;
+	}
+
+	// A frame that took a long time must not move the simulation too far.
+	const auto step = glm::clamp(deltaTime, 0.0f, MaximumStep);
+	_scene->simulate(step);
 	_scene->fetchResults(true);
 }
 
