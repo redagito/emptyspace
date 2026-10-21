@@ -43,6 +43,38 @@ TEST_CASE("The ship is drawn in the orientation of the camera")
 	REQUIRE(up.z == Catch::Approx(1.0f).margin(0.001f));
 }
 
+TEST_CASE("The spotlight of the demo scene covers the cubes the camera starts among")
+{
+	REQUIRE(GLTestContext() != nullptr);
+
+	auto device = std::make_unique<GraphicsDevice>();
+	SpaceScene scene(*device);
+	scene.Initialize();
+
+	const Light* spotlight = nullptr;
+	for (const auto& light : scene.Lights())
+	{
+		if (light.Type == LightType::SpotLight)
+		{
+			spotlight = &light;
+		}
+	}
+	REQUIRE(spotlight != nullptr);
+
+	// The cubes the camera starts among orbit the origin at a radius of 2.
+	const glm::vec3 cubePosition{ 2.0f, 0.0f, 0.0f };
+
+	// The cosine of the angle between the direction of the light and the
+	// direction from the cube to the light.
+	const auto toLight = glm::normalize(spotlight->Position - cubePosition);
+	const auto theta = glm::dot(toLight, glm::normalize(-spotlight->Direction));
+
+	// The cut offs are the cosines of the inner and the outer angle of the
+	// cone. The cube has to be inside the inner one to be lit fully.
+	REQUIRE(theta >= spotlight->CutOff.x);
+	REQUIRE(theta <= 1.0f);
+}
+
 TEST_CASE("The ship is drawn behind and below the camera")
 {
 	REQUIRE(GLTestContext() != nullptr);

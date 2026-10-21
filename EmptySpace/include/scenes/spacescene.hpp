@@ -54,11 +54,16 @@ public:
 		_bufferAsteroids->BindAsStorageBuffer(0);
 	}
 
-protected:
+	protected:
 	void InitializeLights()
 	{
 		auto lights = CreateRandomLights(50);
-		lights.emplace_back(LightType::SpotLight, glm::vec3(0.0f, 8.0f, 0.0f), glm::vec3(0.6f, 1.0f, 0.0f), 400.0f, glm::vec3(0.0f, -1.0f, 0.0f));
+		lights.emplace_back(LightType::SpotLight,
+			glm::vec3(0.0f, 16.0f, 0.0f),                             // the position of the light
+			glm::vec3(1.0f, 1.0f, 1.0f),                               // the colour of the light
+			400.0f,                                                     // the radius it fades out over
+			glm::vec3(0.0f, -1.0f, 0.0f),                              // the direction it points in
+			glm::vec2(glm::cos(glm::radians(30.0f)), glm::cos(glm::radians(35.0f))));  // its cone
 
 		for (auto& light : lights)
 		{
