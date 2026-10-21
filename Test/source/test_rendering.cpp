@@ -213,6 +213,30 @@ TEST_CASE("An emissive material emits its colour")
 	REQUIRE(centre.b == Catch::Approx(0.75f).margin(0.01f));
 }
 
+TEST_CASE("The tangent of a face follows its texture axis")
+{
+	REQUIRE(GLTestContext() != nullptr);
+
+	// A normal map that points along the u axis of the tangent space.
+	const u8 tangentNormal[4] = { 255, 128, 128, 255 };
+
+	auto device = std::make_unique<GraphicsDevice>();
+	auto scene = std::make_unique<TestScene>(*device, Shape::Cube,
+		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)), tangentNormal);
+
+	Renderer renderer(FrameSize{ kSize, kSize }, std::move(scene));
+	renderer.Render(CameraAtOrigin(), 0.016f, FrameSize{ kSize, kSize });
+
+	const auto gbuffer = ReadTexture(renderer.GBufferNormal(), kSize, kSize);
+	const auto centre = PixelAt(gbuffer, kSize, kSize / 2, kSize / 2);
+
+	// The face towards the camera has its u axis along +X, so the mapped
+	// normal ends up along the tangent.
+	REQUIRE(centre.x == Catch::Approx(1.0f).margin(0.05f));
+	REQUIRE(centre.y == Catch::Approx(0.0f).margin(0.05f));
+	REQUIRE(centre.z == Catch::Approx(0.0f).margin(0.05f));
+}
+
 TEST_CASE("A point light lights a surface in front of it")
 {
 	REQUIRE(GLTestContext() != nullptr);

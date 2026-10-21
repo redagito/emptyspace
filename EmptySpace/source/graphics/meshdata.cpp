@@ -239,8 +239,8 @@ void MeshData::CalculateTangents()
 
         const auto inverseDeterminant = 1.0f / determinant;
 
-        const auto tangent = (uv1.y * edge1 - uv2.y * edge2) * inverseDeterminant;
-        const auto bitangent = (uv2.x * edge1 - uv1.x * edge2) * inverseDeterminant;
+        const auto tangent = (uv2.y * edge1 - uv1.y * edge2) * inverseDeterminant;
+        const auto bitangent = (uv1.x * edge2 - uv2.x * edge1) * inverseDeterminant;
 
         _tangents[i0] += tangent;
         _tangents[i1] += tangent;
