@@ -53,6 +53,4 @@ private:
 	physx::PxScene* _scene = nullptr;
 
 	physx::PxMaterial* _material = nullptr;
-
-	physx::PxPvd* _visualDebugger = nullptr;
 };

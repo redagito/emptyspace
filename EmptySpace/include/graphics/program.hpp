@@ -10,21 +10,6 @@
 #include <array>
 #include <stdexcept>
 
-template <typename T>
-u32 CreateShaderStorageBuffer(T* data, const u32 size)
-{
-    u32 name;
-    glCreateBuffers(1, &name);
-#if _DEBUG
-    const auto label = typeid(T).name();
-    glObjectLabel(GL_BUFFER, name, strlen(label), label);
-#endif
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, name);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * size, data, GL_STATIC_DRAW);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    return name;
-}
-
 class Program
 {
 public:

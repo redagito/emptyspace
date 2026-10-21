@@ -14,7 +14,6 @@ layout(location = 1) out vec3 fs_fragment_position;
 layout(location = 2) out vec3 fs_normal;
 layout(location = 3) out vec2 fs_uv;
 layout(location = 4) out vec4 fs_tangent;
-layout(location = 5) out flat int fs_material_id;
 layout(location = 6) out smooth vec4 fs_current_position;
 layout(location = 7) out smooth vec4 fs_previous_position;
 layout(location = 8) out flat mat4 fs_model_matrix;

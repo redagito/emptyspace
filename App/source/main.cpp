@@ -8,6 +8,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <iostream>
@@ -245,7 +246,7 @@ int main(int /*argc*/, char** /*argv*/)
 					1000.0f * deltaTimeStandardError, 1.0f / deltaTimeAverage, framesToAverage, renderer.VisibleLights(), 0.0f);
 				glfwSetWindowTitle(g_Window, str);
 
-				framesToAverage = static_cast<int>(1.0f / deltaTimeAverage);
+				framesToAverage = std::max(1, static_cast<int>(1.0f / deltaTimeAverage));
 
 				deltaTimeAverage = 0.0f;
 				deltaTimeAverageSquared = 0.0f;
@@ -259,7 +260,6 @@ int main(int /*argc*/, char** /*argv*/)
 			glfwGetFramebufferSize(g_Window, &frameWidth, &frameHeight);
 			renderer.Render(camera, deltaTime, FrameSize{ frameWidth, frameHeight });
 
-			glFinish();
 			glfwSwapBuffers(g_Window);
 		}
 

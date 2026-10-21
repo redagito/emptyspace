@@ -57,7 +57,6 @@ protected:
 	void InitializeLights()
 	{
 		auto lights = CreateRandomLights(50);
-		//std::vector<Light> lights;
 		lights.emplace_back(LightType::SpotLight, glm::vec3(0.0f, 8.0f, 0.0f), glm::vec3(0.6f, 1.0f, 0.0f), 400.0f, glm::vec3(0.0f, -1.0f, 0.0f));
 
 		for (auto& light : lights)
@@ -77,10 +76,6 @@ protected:
 		auto const asteroidInstances = CreateAsteroidInstances(5000);
 
 		_bufferAsteroids = new Buffer(asteroidInstances);
-	}
-
-	void InternalDraw(f32 /*deltaTime*/) override
-	{
 	}
 
 	void InternalUpdate(f32 /*deltaTime*/, const Camera& camera) override
@@ -198,5 +193,4 @@ private:
 	Texture* _textureCubeNormal{};
 
 	Buffer* _bufferAsteroids{};
-	std::vector<Scene*> _scenes;
 };

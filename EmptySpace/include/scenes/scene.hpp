@@ -29,11 +29,6 @@ public:
 
     virtual void Cleanup() = 0;
 
-    inline void Draw(f32 deltaTime)
-    {
-        InternalDraw(deltaTime);
-    }
-
     virtual void Initialize();
 
     inline void Update(const f32 deltaTime, const Camera& camera)
@@ -58,10 +53,6 @@ public:
     }
 
 protected:
-    virtual void InternalDraw(f32 /*deltaTime*/)
-    {
-    }
-
     virtual void InternalUpdate(f32 /*deltaTime*/, const Camera& /*camera*/)
     {
     }
@@ -71,8 +62,6 @@ protected:
     std::vector<SceneObject*> _objects;
 
     SceneNode* RootNode;
-private:
-
 };
 
 inline void Scene::Initialize()

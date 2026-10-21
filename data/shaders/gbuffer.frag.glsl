@@ -4,7 +4,6 @@ layout(location = 1) in vec3 fs_fragment_position;
 layout(location = 2) in vec3 fs_normal;
 layout(location = 3) in vec2 fs_uv;
 layout(location = 4) in vec4 fs_tangent;
-layout(location = 5) in flat int fs_material_id;
 layout(location = 6) in smooth vec4 fs_current_position;
 layout(location = 7) in smooth vec4 fs_previous_position;
 layout(location = 8) in flat mat4 fs_model_matrix;

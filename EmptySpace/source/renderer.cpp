@@ -341,8 +341,6 @@ void Renderer::ResolveGBuffer(const Camera& camera, const f32 fieldOfView)
 	_finalFramebuffer->ClearDepth(1.0f);
 	_finalFramebuffer->Bind();
 
-	_gBufferPositionTexture->Bind(0);
-	_gBufferNormalTexture->Bind(1);
 	_gBufferAlbedoTexture->Bind(2);
 	_gBufferDepthTexture->Bind(3);
 	_skyboxTextureCube->Bind(4);
@@ -405,7 +403,6 @@ void Renderer::RenderMotionBlur()
 
 	_emptyGeometry->Bind();
 	_motionBlurProgram->Bind();
-	_motionBlurProgram->SetVertexShaderUniform(kUniformUvsDiff, glm::vec2(1.0f, 1.0f));
 	_motionBlurProgram->SetFragmentShaderUniform(kUniformVelocityScale, 2.0f);
 
 	glCullFace(GL_FRONT);

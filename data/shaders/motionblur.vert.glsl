@@ -7,8 +7,6 @@ layout(location = 0) out gl_PerVertex
 
 layout(location = 1) out vec2 fs_uv;
 
-layout(location = 3) uniform vec2 u_uv_diff;
-
 void main()
 {
     gl_Position = vec4(float(gl_VertexID / 2) * 4.0 - 1.0, float(gl_VertexID % 2) * 4.0 - 1.0, 0.0, 1.0);
